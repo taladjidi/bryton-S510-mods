@@ -129,8 +129,23 @@ strip now disappears within about a second of the step change, whatever the timi
 The big number in the middle of the workout screen is the step target's live value. For power targets it is
 the **instantaneous** power sample. The firmware also keeps rolling **3 s / 10 s / 30 s** averages of the
 per-second power samples (window table `{3, 10, 30}` at `0xd0281178`), shown as data fields 28 / 78 / 27.
-In progress: tap the centre value to cycle instant / 3 s / 10 s / 30 s, with the choice shown next to the step
-counter and kept across restarts (needs new code; it will live in ~1.5 KB of unused padding at the end of the image). FIT workout files can
+`P5` lets you tap the centre value to cycle instant / 3 s / 10 s / 30 s:
+
+- **Value:** `Workout_ReadPowerLive` (`0xd01ab3dc`) reads the instant sample at `0xd01ab3fe`; P5 calls new code there
+  that returns the chosen average (`+4/+8/+0xc` of the power listener's data) when the destination is the centre
+  value. A second caller that fills another runtime field keeps the instant value.
+- **Tap:** `CourseWorkoutPlay_OnTouchRelease` (`0xd0234c4e`), default-tap path `0xd0234d8a`, normally opens the
+  overview (brightness, notifications…). On a power step, a tap inside the centre box's bounds now changes the mode
+  and leaves the handler. Taps elsewhere still open the overview.
+- **Label:** the centre box (`CourseWorkoutValueB`) has a header text that is hidden on power steps, where a small
+  icon is shown instead. P5 hooks the power case of `CourseWorkoutPlay_LoadIntervalData` (`0xd0234a4a`) to show
+  `3s` / `10s` / `30s` there; instant keeps the icon.
+- **Storage:** RTC backup register 8 (`0x58004070`), unused by the OS and the bootloader; it survives power-off.
+- **Space:** the 228 B of new code sit at `0xd03d69d0`, in zero padding after the last block of the startup
+  initialisation table (`0xd03d69cf`); nothing reads or points into that range.
+
+The averages are the firmware's own (the same numbers as data fields 28/78/27): they update only while recording,
+and for the first N seconds they divide by the full window, so they start low. FIT workout files can
 already request `power_3s` / `power_10s` / `power_30s` targets per step, but this firmware rejects those target
 types when importing.
 

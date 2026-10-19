@@ -21,6 +21,7 @@ download that yourself from Bryton's update server, and the scripts apply the pa
 | `P1` | Workout countdown: **3 beeps** (3, 2, 1 s) before a timed step ends instead of ~9. | ✅ flashed, works |
 | `P3` | Workout "next step" popup becomes a **small strip over the chart** (next duration + next target), without dimming the whole screen. | ✅ flashed, works (with P4) |
 | `P4` | Fix: the strip/popup only stays while the step-end countdown runs (with P1+P3 alone it could stay up for a whole step). First patch that changes code. | ✅ flashed, works |
+| `P5` | Workout screen: **tap the big power number** on a power step to cycle instant → 3 s → 10 s → 30 s average. The box header shows `3s` / `10s` / `30s` (stock icon for instant); the choice survives restarts. New code in unused space at the end of the image. | ✅ flashed, works |
 | `D1` | Debug aid: save the firmware's debug log to `\Debug` at every boot. Not for normal use. | ✅ flashed (captures only the current boot) |
 
 | Tool | What it does |
@@ -101,7 +102,7 @@ you would run if a patch ever went wrong.
 Unplug, let the unit start normally, plug it in again (BRYTON drive mounted), then:
 
 ```sh
-./deploy.py T1                     # or: ./deploy.py -n workout P1 P3 P4
+./deploy.py T1                     # or: ./deploy.py -n workout-power P1 P3 P4 P5
 ```
 
 `deploy.py` builds the package from stock + the patches you name, checks the drive really is the S510, copies
@@ -141,7 +142,10 @@ string  0xBLOCK  0xINDEX  sha256:<16 hex of the original text>  room=<bytes>  "n
 ```
 
 Addresses are load addresses (the image runs at `0xd0000000`). See [docs/how-it-works.md](docs/how-it-works.md)
-for the image layout and the string blocks, and `build.py`'s header for the details.
+for the image layout and the string blocks, and `build.py`'s header for the details. Patches with new code
+(`P5`) keep the assembly next to the `.patch` file; it is assembled with
+`clang --target=thumbv7em-none-eabi -mcpu=cortex-m7 -c`, and every instruction is checked in Ghidra with
+`ghidra/scripts/PatchCheck.java` before flashing.
 
 ## Legal
 
