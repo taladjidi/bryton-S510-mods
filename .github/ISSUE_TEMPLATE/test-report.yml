@@ -1,0 +1,57 @@
+name: I tried it (test report)
+description: Tell us how installing the patches went on your bike computer, good or bad.
+title: "Test report: "
+labels: ["test report"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for trying it! Reports from units other than the test unit are the most useful thing right now.
+        If your unit no longer starts, see [docs/recovery.md](https://github.com/taladjidi/bryton-S510-mods/blob/main/docs/recovery.md) first.
+  - type: dropdown
+    id: result
+    attributes:
+      label: Result
+      options:
+        - Works as described
+        - Installed, but something looks or behaves wrong
+        - Did not install (no update animation, or the old firmware is still there)
+        - Unit does not start any more
+    validations: { required: true }
+  - type: checkboxes
+    id: patches
+    attributes:
+      label: Patches installed
+      options:
+        - label: P1 (3 countdown beeps)
+        - label: P3 (next-step strip)
+        - label: P4 (strip hides on step change)
+        - label: P5 (tap to switch instant / 3s / 10s / 30s power)
+        - label: Other (say which below)
+  - type: dropdown
+    id: method
+    attributes:
+      label: How did you build and install it?
+      options:
+        - Web builder, "Write to the BRYTON drive" button
+        - Web builder, downloaded the 2 files and copied them
+        - Command line (deploy.py / build.py)
+    validations: { required: true }
+  - type: input
+    id: system
+    attributes:
+      label: Computer and browser
+      placeholder: e.g. macOS 15 + Chrome, Windows 11 + Firefox, Ubuntu 24.04 + command line
+  - type: input
+    id: device
+    attributes:
+      label: Bike computer
+      description: Model, and the [OS] / [BootLoader] versions from System/device.txt on its drive.
+      placeholder: e.g. Rider S510, OS R039, BootLoader R002
+    validations: { required: true }
+  - type: textarea
+    id: details
+    attributes:
+      label: What you saw
+      description: What worked, what didn't, anything surprising. Photos of the screen help a lot.
+    validations: { required: true }

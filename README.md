@@ -146,10 +146,10 @@ for the image layout and the string blocks, and `build.py`'s header for the deta
 
 Feedback is very welcome, especially from other S510 owners.
 
-- **Tried it?** Open an [issue](https://github.com/taladjidi/bryton-S510-mods/issues) and say what happened,
+- **Tried it?** Fill in a [test report](https://github.com/taladjidi/bryton-S510-mods/issues/new?template=test-report.yml),
   good or bad: which patches, how you installed them (web builder or scripts, which OS) and what you saw on the
   unit. Reports from units other than the test unit are the most useful thing right now.
-- **Something you would change on the S510?** Open an issue describing it. Workout and data-screen behaviour is
+- **Something you would change on the S510?** Open an [idea](https://github.com/taladjidi/bryton-S510-mods/issues/new?template=idea.yml). Workout and data-screen behaviour is
   the best understood part of the firmware so far.
 - **Pull requests** are welcome: new patches (format in [Writing patches](#writing-patches); explain the change
   in `docs/how-it-works.md` and keep Bryton's bytes out of the patch), fixes to the tools, the web builder or the

@@ -1,0 +1,21 @@
+name: Something I'd change
+description: A behaviour of the S510 you would like to see changed by a patch.
+title: "Idea: "
+labels: ["idea"]
+body:
+  - type: textarea
+    id: now
+    attributes:
+      label: What the unit does now
+      description: Which screen or feature, and what bothers you. A photo helps.
+    validations: { required: true }
+  - type: textarea
+    id: wanted
+    attributes:
+      label: What you would like instead
+    validations: { required: true }
+  - type: input
+    id: device
+    attributes:
+      label: Bike computer and firmware
+      placeholder: e.g. Rider S510, OS R039
