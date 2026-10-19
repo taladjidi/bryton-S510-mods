@@ -109,7 +109,7 @@ Unplug, let the unit start normally, plug it in again (BRYTON drive mounted), th
 `FLASHLOG.md`. **Unplug**: the unit restarts, shows the firmware-update animation, installs the update and
 restarts again. Check the change, and write what you saw in `FLASHLOG.md`.
 
-Every build starts from stock: flashing `P1 P3` removes `T1` unless you list it again.
+Every build starts from stock: flashing `P1 P3 P4` removes `T1` unless you list it again.
 
 ### Going back to stock
 
