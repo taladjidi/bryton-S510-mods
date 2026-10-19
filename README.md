@@ -139,6 +139,20 @@ for the image layout and the string blocks, and `build.py`'s header for the deta
 `clang --target=thumbv7em-none-eabi -mcpu=cortex-m7 -c`, and every instruction is checked in Ghidra with
 `ghidra/scripts/PatchCheck.java` before flashing.
 
+## Contributing
+
+Feedback is very welcome, especially from other S510 owners.
+
+- **Tried it?** Open an [issue](https://github.com/taladjidi/bryton-S510-mods/issues) and say what happened,
+  good or bad: which patches, how you installed them (web builder or scripts, which OS) and what you saw on the
+  unit. Reports from units other than the test unit are the most useful thing right now.
+- **Something you would change on the S510?** Open an issue describing it. Workout and data-screen behaviour is
+  the best understood part of the firmware so far.
+- **Pull requests** are welcome: new patches (format in [Writing patches](#writing-patches); explain the change
+  in `docs/how-it-works.md` and keep Bryton's bytes out of the patch), fixes to the tools, the web builder or the
+  docs. `python3 tests/test_tools.py` must pass; GitHub Actions runs it on every PR.
+- Owners of other recent Bryton units: an issue saying which model and firmware version you have is a good start.
+
 ## Legal
 
 The firmware is Bryton's copyrighted work and is **not** included here: not as a file, and not as fragments
