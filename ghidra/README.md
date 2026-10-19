@@ -57,6 +57,7 @@ Bootloader (`iap.bin`, base `0x08000000`, same loader/processor) + `IapSetup.jav
 | `MapITCM.java` | maps the ITCM kernel copy (exec 0x00000000, load 0xd0351a68, 64 KB) as a byte-mapped block, then replaces Ghidra's EXT_FUN_xxxx placeholders with real Thumb functions and re-points their thunks. |
 | `MarkOutlined.java` | find IAR compiler-outlined code stubs and (optionally) mark them inline so the decompiler folds them into their callers. |
 | `NullSubs.java` | read-only: emit "0xADDR nullsub_<addr>" for default-named functions whose body is a single return (bx lr). |
+| `PatchCheck.java` | read-only: write patch bytes into memory, disassemble them and print the result, so hand-encoded instructions are checked by Ghidra before flashing. |
 | `RamMap.java` | map the STM32H747 RAM regions as uninitialised blocks and make literal-pool words that point into them constant pointers, so the decompiler shows the global itself (DAT_2406cac0) instead of a pool … |
 | `StringIndex.java` | read-only: string cross-reference index. |
 | `TopCallees.java` | read-only: default-named (FUN_) functions ranked by number of call sites. |

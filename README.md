@@ -18,8 +18,10 @@ download that yourself from Bryton's update server, and the scripts apply the pa
 | Patch | What it does | Status |
 |-------|--------------|--------|
 | `T1` | Renames the English data-field title "3s PW" to "3s QW". Pointless on purpose: a harmless, visible change to prove the build → flash path. | ✅ flashed and running |
-| `P1` | Workout countdown: **3 beeps** (3, 2, 1 s) before a timed step ends instead of ~9. | 🧪 built, not yet tested on the unit |
-| `P3` | Workout "next step" popup becomes a **small strip over the chart** (next duration + next target), without dimming the whole screen. | 🧪 built, not yet tested on the unit |
+| `P1` | Workout countdown: **3 beeps** (3, 2, 1 s) before a timed step ends instead of ~9. | ✅ flashed, works |
+| `P3` | Workout "next step" popup becomes a **small strip over the chart** (next duration + next target), without dimming the whole screen. | ✅ flashed, works (see P4) |
+| `P4` | Fix: the strip/popup only stays while the step-end countdown runs (with P1+P3 alone it could stay up for a whole step). First patch that changes code. | 🧪 built, not yet tested on the unit |
+| `D1` | Debug aid: save the firmware's debug log to `\Debug` at every boot. Not for normal use. | ✅ flashed (captures only the current boot) |
 
 | Tool | What it does |
 |------|--------------|
@@ -99,7 +101,7 @@ you would run if a patch ever went wrong.
 Unplug, let the unit start normally, plug it in again (BRYTON drive mounted), then:
 
 ```sh
-./deploy.py T1                     # or: ./deploy.py -n beeps+strip P1 P3
+./deploy.py T1                     # or: ./deploy.py -n workout P1 P3 P4
 ```
 
 `deploy.py` builds the package from stock + the patches you name, checks the drive really is the S510, copies

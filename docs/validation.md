@@ -23,7 +23,9 @@ R039, bootloader R002, flashed from macOS.
 | 0 | Read the whole firmware area | Engineer Mode, `iaprecover.py` | 4 026 368 B == stock R039 |
 | 1 | Recovery write test | `iaprecover.py --write-vanilla` (stock over stock, each 2 KB chunk read back), then full readback | all chunks verified, readback == stock, boots normally |
 | 2 | First patched firmware: `T1` | `deploy.py T1`, normal update at startup | update animation, boots, field title reads "3s QW" |
-| 3 | `P1` + `P3` | — | not flashed yet |
+| 3 | `P1` + `P3` | `deploy.py` | boots; 3 beeps; strip over the chart without dimming. Issue: sometimes the strip stays up the whole next step (re-armed after the step change) |
+| 4 | `P1` + `P3` + `D1` | `deploy.py` | boots; debug logs saved at each boot but only contain that boot (RAM log doesn't survive the 4-button reboot) |
+| 5 | `P1` + `P3` + `P4` | — | P4 instructions checked with Ghidra's disassembler (`ghidra/scripts/PatchCheck.java`); not flashed yet |
 
 Side observation after #2: battery read 100 % after the session vs 90 % before. Explained by the voltage-only
 battery gauge after a long time on USB (see [how-it-works.md](how-it-works.md#battery-percentage)); the battery
