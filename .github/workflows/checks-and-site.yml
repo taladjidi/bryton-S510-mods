@@ -1,0 +1,58 @@
+# Every push: download stock R039 from Bryton, build every patch and the "workout" preset, check that bad
+# input is refused, and that the web builder (site/) produces the same image as build.py.
+# Pushes to main then publish the web builder to GitHub Pages — only if all of that passed.
+name: checks and site
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+      - uses: actions/cache@v4
+        with:
+          path: firmware/R039
+          key: firmware-${{ hashFiles('firmware/SHA256SUMS') }}
+      - name: Stock firmware (from Bryton's server; build.py re-checks the hashes)
+        run: '[ -f firmware/R039/img.bin ] || python3 tools/fetch_firmware.py'
+      - name: Build every patch, the preset and stock
+        run: |
+          ./build.py vanilla
+          for p in patches/*.patch; do ./build.py "$(basename "$p" | cut -d- -f1)"; done
+          ./build.py workout
+      - name: Bad input is refused
+        run: |
+          if ./build.py -n twice P1 P1; then echo "a patch applied twice was accepted"; exit 1; fi
+      - name: Web builder == build.py
+        run: node site/test.mjs
+
+  site:
+    needs: checks
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions: { contents: read, pages: write, id-token: write }
+    concurrency: { group: pages, cancel-in-progress: true }
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Assemble the site (page + builder + patch files; no firmware)
+        run: |
+          mkdir -p _site/patches
+          cp site/index.html site/builder.js _site/
+          if [ -d site/img ]; then cp -r site/img _site/; fi
+          cp patches/*.patch _site/patches/
+          (cd patches && ls *.patch) | python3 -c "import json,sys; print(json.dumps(sys.stdin.read().split()))" > _site/patches/index.json
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with: { path: _site }
+      - id: deploy
+        uses: actions/deploy-pages@v4

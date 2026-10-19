@@ -1,0 +1,31 @@
+# Daily: read Bryton's release.ini for the Rider S510. If it no longer says R039, open an issue (once), so
+# people watching the repo know a Bryton update exists and that the patches need porting.
+# Note: GitHub disables scheduled workflows after 60 days without repository activity.
+name: watch Bryton firmware
+on:
+  schedule: [{ cron: '17 6 * * *' }]
+  workflow_dispatch:
+
+permissions: { issues: write }
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          v=$(curl -fsS https://corp.brytonsport.com/device/riders510/release.ini | tr -d '\r' |
+              awk -F= '/^\[OS\]/{o=1; next} /^\[/{o=0} o && $1=="Version"{print $2}')
+          [ -n "$v" ] || { echo "could not read the OS version from release.ini"; exit 1; }
+          echo "Bryton serves OS $v"
+          [ "$v" = R039 ] && exit 0
+          title="Bryton published Rider S510 firmware $v"
+          n=$(gh issue list -R "$REPO" --state all --search "in:title \"$title\"" --json number --jq length)
+          [ "$n" = 0 ] || exit 0
+          gh issue create -R "$REPO" --title "$title" --body "Bryton's update server now offers OS **$v** for the Rider S510 (the patches here are for **R039**).
+
+          - The Bryton app will offer this update. Installing it replaces the patched firmware with Bryton's; declining keeps patched R039.
+          - The builder and build.py refuse anything that is not exactly R039, so nothing breaks — they just stop working until the patches are ported.
+          - If you are still on R039 and want to keep building: run \`tools/fetch_firmware.py --from-readback\` with a readback of your unit (docs/recovery.md), since Bryton's server now serves $v."

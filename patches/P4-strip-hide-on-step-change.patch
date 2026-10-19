@@ -1,3 +1,4 @@
+title:  Fix: next-step strip always hides when the step changes
 desc:   next-step strip/popup only while the step-end countdown runs (fixes the strip staying up a whole step after a step change)
 source: docs/how-it-works.md#workout-next-step-popup (P4)
 # Workout_UpdateRuntime 0xd01ab5ec, countdown-not-active branch: the call to a stub that always returns 0 (and the

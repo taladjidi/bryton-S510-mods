@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rider S510 mods</title>
+<meta name="description" content="Build patched firmware for the Bryton Rider S510 bike computer in your browser. Unofficial.">
+<style>
+  :root {
+    --bg: #fbfbf9; --fg: #1d1d1b; --muted: #5f5f5a; --line: #deddd6; --card: #ffffff;
+    --accent: #0b6e4f; --accent-fg: #ffffff; --warn-bg: #fff4d6; --warn-fg: #5c4400; --err: #a3271b; --ok: #0b6e4f;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161614; --fg: #ecebe6; --muted: #a3a29b; --line: #34332f; --card: #1f1f1c;
+      --accent: #4fc79c; --accent-fg: #0d1f18; --warn-bg: #3a3014; --warn-fg: #f3dd9b; --err: #ff8a7a; --ok: #4fc79c;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 32px 16px 64px; }
+  h1 { font-size: 1.9rem; line-height: 1.2; margin: 0 0 8px; }
+  h2 { font-size: 1.2rem; margin: 40px 0 12px; display: flex; gap: 10px; align-items: baseline; }
+  h2 .n { color: var(--accent); font-variant-numeric: tabular-nums; }
+  p, li { color: var(--fg); }
+  .lead { color: var(--muted); font-size: 1.05rem; margin-top: 0; }
+  a { color: var(--accent); }
+  .warn { background: var(--warn-bg); color: var(--warn-fg); border-radius: 8px; padding: 12px 14px; font-size: .95rem; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 4px 16px; }
+  label.patch { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; padding: 12px 0; border-top: 1px solid var(--line); cursor: pointer; }
+  label.patch:first-child { border-top: 0; }
+  label.patch input { margin-top: 5px; width: 18px; height: 18px; accent-color: var(--accent); }
+  label.patch small { grid-column: 2; color: var(--muted); }
+  details { margin-top: 12px; color: var(--muted); }
+  summary { cursor: pointer; }
+  button { font: inherit; font-weight: 600; border: 0; border-radius: 8px; padding: 11px 18px; cursor: pointer;
+           background: var(--accent); color: var(--accent-fg); }
+  button.secondary { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+  .row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+  progress { width: 100%; height: 8px; accent-color: var(--accent); }
+  #log { font: 13px/1.5 ui-monospace, Menlo, Consolas, monospace; white-space: pre-wrap; color: var(--muted); margin: 10px 0 0; }
+  #log .err { color: var(--err); } #log .ok { color: var(--ok); }
+  figure { margin: 16px 0; } figure img { width: 100%; border-radius: 8px; border: 1px solid var(--line); }
+  figcaption { color: var(--muted); font-size: .9rem; }
+  ol li { margin-bottom: 6px; }
+  footer { margin-top: 48px; color: var(--muted); font-size: .9rem; border-top: 1px solid var(--line); padding-top: 16px; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Rider S510 mods</h1>
+  <p class="lead">Small improvements to the Bryton Rider S510's workout screen, built into its firmware in your
+    browser. Nothing to install.</p>
+
+  <figure><img src="img/workout.jpg" alt="The workout screen with the patches" onerror="this.parentElement.remove()">
+    <figcaption>Workout screen with the patches.</figcaption></figure>
+
+  <p class="warn"><strong>Unofficial, not affiliated with Bryton. Use at your own risk.</strong> Tested on one unit on
+    firmware R039. Going back to stock is the same simple procedure, and a unit that no longer starts can be
+    recovered (<a href="https://github.com/taladjidi/bryton-S510-mods/blob/main/docs/recovery.md">recovery guide</a>).</p>
+
+  <h2><span class="n">1</span> Check your bike computer</h2>
+  <ul>
+    <li>Plug it into your computer. On its <strong>BRYTON</strong> drive, open <code>System/device.txt</code>: the
+      first lines must read <code>[OS]</code> / <code>Version=R039</code>. Older version: update it with the Bryton
+      Active app first. Newer version: not supported yet.</li>
+    <li>Battery at least <strong>38 %</strong>, otherwise the unit silently skips the update.</li>
+  </ul>
+
+  <h2><span class="n">2</span> Choose what to change</h2>
+  <div class="card" id="patches"><p>Loading the list…</p></div>
+  <details id="devbox" hidden><summary>Developer and test patches</summary><div class="card" id="devpatches"></div></details>
+
+  <h2><span class="n">3</span> Build</h2>
+  <p>Your browser downloads the official firmware from Bryton's server, checks it is exactly R039, applies the
+    changes and re-checks everything the bike computer checks. The firmware never comes from this site.</p>
+  <div class="row">
+    <button id="build">Build my firmware</button>
+    <button id="stock" class="secondary">Back to stock firmware</button>
+  </div>
+  <div id="progressbox" hidden><progress id="progress" max="1" value="0"></progress></div>
+  <div id="log" role="status" aria-live="polite"></div>
+
+  <section id="save" hidden>
+    <h2><span class="n">4</span> Put it on the bike computer</h2>
+    <div class="row">
+      <button id="write" hidden>Write to the BRYTON drive</button>
+      <button id="dl" class="secondary">Download the 2 files</button>
+    </div>
+    <p id="dlhelp">Copy <code>IMG.bin</code> and <code>update.ini</code> to the top level of the BRYTON drive
+      (next to the <code>System</code> folder), replacing any files with the same name.</p>
+    <h2><span class="n">5</span> Install</h2>
+    <ol>
+      <li><strong>Eject</strong> the BRYTON drive, then unplug the cable.</li>
+      <li>The bike computer restarts, shows a firmware-update animation for about a minute, and restarts again.</li>
+      <li>Done. It keeps your settings, rides and workouts.</li>
+    </ol>
+    <p>If no animation appears: battery under 38 %, or the files were not at the top level of the drive.</p>
+  </section>
+
+  <h2>Questions</h2>
+  <details><summary>What happens when Bryton releases an update?</summary>
+    <p>The Bryton app will offer it as usual. Accepting installs Bryton's new firmware, which removes these changes
+      until they are adapted to it. Declining keeps your patched R039. The patches can never be applied to the wrong
+      firmware: the builder refuses anything that isn't exactly R039.</p></details>
+  <details><summary>How do I go back to stock?</summary>
+    <p>Click <em>Back to stock firmware</em>, then do steps 4 and 5. That installs Bryton's original file, unchanged.</p></details>
+  <details><summary>What if it doesn't start any more?</summary>
+    <p>The bootloader (the part that starts the firmware) is never modified, and it has a recovery mode that can
+      rewrite the stock firmware. It needs a computer with Python: see the
+      <a href="https://github.com/taladjidi/bryton-S510-mods/blob/main/docs/recovery.md">recovery guide</a>.</p></details>
+  <details><summary>Which browsers work?</summary>
+    <p>Current Chrome, Edge, Firefox and Safari. Writing straight to the drive needs Chrome or Edge; with the
+      others, download the 2 files and copy them yourself.</p></details>
+
+  <footer>Open source: <a href="https://github.com/taladjidi/bryton-S510-mods">github.com/taladjidi/bryton-S510-mods</a>
+    — how it works, every check, every test. Bryton's firmware is not hosted here; it is downloaded from Bryton's own
+    server by your browser.</footer>
+</main>
+
+<script type="module">
+import { download, unpackStock, parsePatch, applyPatches, pack, updateIni, sha256, PRESETS, SHA_IMG } from './builder.js';
+
+const $ = (id) => document.getElementById(id);
+const log = (msg, cls = '') => { const s = document.createElement('div'); s.textContent = msg; s.className = cls; $('log').append(s); };
+let patches = {}, result = null;
+
+async function loadPatches() {
+  const files = await (await fetch('patches/index.json')).json();
+  $('patches').textContent = '';
+  for (const f of files) {
+    const id = f.split('-')[0], p = parsePatch(id, await (await fetch('patches/' + f)).text());
+    patches[id] = p;
+    const dev = /^[TD]/.test(id);
+    const el = document.createElement('label');
+    el.className = 'patch';
+    el.innerHTML = '<input type="checkbox"><span></span><small></small>';
+    el.querySelector('input').value = id;
+    el.querySelector('input').checked = PRESETS.workout.includes(id);
+    el.querySelector('input').disabled = !!p.unsupported;
+    el.querySelector('span').textContent = p.title || id;
+    el.querySelector('small').textContent = `${id} · ${p.unsupported ? p.unsupported : p.desc}`;
+    $(dev ? 'devpatches' : 'patches').append(el);
+    if (dev) $('devbox').hidden = false;
+  }
+}
+
+async function getStock() {
+  $('progressbox').hidden = false;
+  log('Downloading the official firmware from Bryton…');
+  const img = await download((f) => ($('progress').value = f));
+  return img;
+}
+
+async function run(stock) {
+  $('log').textContent = ''; $('save').hidden = true; result = null;
+  for (const b of ['build', 'stock']) $(b).disabled = true;
+  try {
+    const img = await getStock();
+    if (stock) {
+      if ((await sha256(img)) !== SHA_IMG) throw new Error('This is not stock R039.');
+      log('Stock R039 firmware, unchanged.', 'ok');
+      result = { img, name: 'stock' };
+    } else {
+      const ids = [...document.querySelectorAll('label.patch input:checked')].map((i) => i.value);
+      if (!ids.length) throw new Error('Choose at least one change (or use "Back to stock firmware").');
+      log('Checking it is exactly R039 and unpacking…');
+      const raw = await unpackStock(img);
+      log(`Applying ${ids.join(', ')}…`);
+      const out = await applyPatches(raw, ids.map((id) => patches[id]));
+      log('Packing and re-checking…');
+      result = { img: await pack(out), name: ids.join('+') };
+      log(`Ready: ${ids.join(' + ')} — every check passed.`, 'ok');
+    }
+    $('save').hidden = false;
+    $('write').hidden = !('showDirectoryPicker' in window);
+  } catch (e) {
+    log(e.message, 'err');
+  } finally {
+    for (const b of ['build', 'stock']) $(b).disabled = false;
+  }
+}
+
+function save(name, data) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([data]));
+  a.download = name;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+}
+
+async function writeDrive() {
+  try {
+    const dir = await window.showDirectoryPicker({ mode: 'readwrite' });
+    try { await (await dir.getDirectoryHandle('System')).getFileHandle('device.txt'); }
+    catch { throw new Error('That folder is not the BRYTON drive (no System/device.txt). Choose the drive itself.'); }
+    try { await dir.getFileHandle('IAP.bin'); throw new Error('IAP.bin is on the drive: delete it first (never install a bootloader).'); }
+    catch (e) { if (e.message.startsWith('IAP')) throw e; }
+    const files = [['IMG.bin', result.img], ['update.ini', new TextEncoder().encode(updateIni(result.img))]];
+    for (const [name, data] of files) {
+      const w = await (await dir.getFileHandle(name, { create: true })).createWritable();
+      await w.write(data); await w.close();
+      const back = new Uint8Array(await (await (await dir.getFileHandle(name)).getFile()).arrayBuffer());
+      if ((await sha256(back)) !== (await sha256(data))) throw new Error(`${name} on the drive does not match — try again.`);
+    }
+    log('Written and verified on the drive. Now eject it and unplug (step 5).', 'ok');
+  } catch (e) {
+    if (e.name !== 'AbortError') log(e.message, 'err');
+  }
+}
+
+$('build').onclick = () => run(false);
+$('stock').onclick = () => run(true);
+$('write').onclick = writeDrive;
+$('dl').onclick = () => { save('IMG.bin', result.img); save('update.ini', updateIni(result.img)); };
+loadPatches().catch((e) => ($('patches').textContent = 'Could not load the patch list: ' + e.message));
+</script>
+</body>
+</html>

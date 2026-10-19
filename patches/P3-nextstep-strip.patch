@@ -1,3 +1,4 @@
+title:  Next-step popup becomes a small strip over the chart
 desc:   next-step popup as a 72 px strip over the chart, target + duration, no dimming
 source: docs/how-it-works.md#workout-next-step-popup (popup layout)
 0xd0086d6c  sha256:19a6dab4637990ad  00000000  # backdrop m64 colour: dark 0xc8000000 -> transparent

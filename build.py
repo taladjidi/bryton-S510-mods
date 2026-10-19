@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Build a flashable Rider S510 IMG.bin from the stock R039 image + patch files. Never modifies firmware/R039.
 
-  ./build.py vanilla                 package the untouched img.bin (normal way back to stock)
+  ./build.py vanilla                 package the untouched firmware (normal way back to stock)
+  ./build.py workout                 the recommended set (PRESETS below) -> build/workout/
   ./build.py [-n NAME] P1 [P3 ...]   apply patches/<id>-*.patch in order -> build/NAME/
 
 A package is IMG.bin + update.ini (the unit only checks that update.ini exists; see docs/how-it-works.md).
@@ -28,6 +29,7 @@ VAN, PATCHES, OUT = os.path.join(ROOT, 'firmware', 'R039'), os.path.join(ROOT, '
 SUMS = os.path.join(ROOT, 'firmware', 'SHA256SUMS')
 BASE = 0xd0000000
 GZ_HDR = b'\x1f\x8b\x08\x08\xc4\x38\xb2\x6a\x00\x0bIMG.bin\x00'   # vanilla header (FNAME, same mtime/OS)
+PRESETS = {'workout': ['P1', 'P3', 'P4', 'P5']}     # also offered by the web builder (site/)
 
 
 def die(msg):
@@ -47,6 +49,8 @@ def verify_vanilla():
         h, name = line.split()
         path = os.path.join(VAN, name)
         if not os.path.isfile(path):
+            if name == 'img.bin':
+                continue                                  # optional: only IMG.raw is patched
             die(f'{path} missing — run tools/fetch_firmware.py first')
         if sha(open(path, 'rb').read()) != h:
             die(f'{path} does not match firmware/SHA256SUMS — these patches are for stock R039 only; stop')
@@ -115,18 +119,47 @@ def package(img_bin, raw, name, manifest):
                  f'IMG (raw)   {len(raw)} B  sha256 {sha(raw)}  trailer {raw[-4:].hex()}']
     open(os.path.join(d, 'MANIFEST.txt'), 'w').write('\n'.join(manifest) + '\n')
     print('\n'.join(manifest), f'\n-> {d}')
+    return d
 
 
-def main(argv):
-    verify_vanilla()
+def pack(raw):
+    """IMG.raw -> IMG.bin: gzip member + zero pad to 512 B + additive sum, re-checked like the unit does."""
+    c = zlib.compressobj(9, zlib.DEFLATED, -15, 9)
+    gz = GZ_HDR + c.compress(raw) + c.flush() + (zlib.crc32(raw).to_bytes(4, 'little') + len(raw).to_bytes(4, 'little'))
+    body = gz + b'\0' * ((-(len(gz) + 4)) % 512)
+    img_bin = body + add_sum(body).to_bytes(4, 'little')
+    assert len(img_bin) % 512 == 0 and len(img_bin) >= 0x100001
+    assert add_sum(img_bin[:-4]) == int.from_bytes(img_bin[-4:], 'little')
+    assert zlib.decompressobj(16 + 15).decompress(img_bin) == raw
+    assert add_sum(raw[:-4]) == int.from_bytes(raw[-4:], 'little')
+    assert raw[0x94:0x98] == b'R039'
+    return img_bin
+
+
+def resolve(argv):
+    """Command line -> (package name, patch ids). 'vanilla' -> ('vanilla', [])."""
     if argv == ['vanilla']:
-        b = open(os.path.join(VAN, 'img.bin'), 'rb').read()
-        return package(b, open(os.path.join(VAN, 'IMG.raw'), 'rb').read(), 'vanilla', ['vanilla R039, unmodified'])
+        return 'vanilla', []
+    if len(argv) == 1 and argv[0] in PRESETS:
+        return argv[0], PRESETS[argv[0]]
     name = None
     if argv[:1] == ['-n']:
         name, argv = argv[1], argv[2:]
     if not argv:
         die(__doc__)
+    return name or '+'.join(argv), argv
+
+
+def main(argv):
+    """Build and return the package directory."""
+    verify_vanilla()
+    name, argv = resolve(argv)
+    if name == 'vanilla':
+        raw = open(os.path.join(VAN, 'IMG.raw'), 'rb').read()
+        img = os.path.join(VAN, 'img.bin')
+        if os.path.isfile(img):
+            return package(open(img, 'rb').read(), raw, name, ['vanilla R039, Bryton\'s img.bin unchanged'])
+        return package(pack(raw), raw, name, ['vanilla R039, repacked from IMG.raw (no img.bin)'])
     raw = bytearray(open(os.path.join(VAN, 'IMG.raw'), 'rb').read())
     van = bytes(raw)
     owned, manifest = {}, ['vanilla R039 sha256 ' + sha(van)]
@@ -158,18 +191,7 @@ def main(argv):
     if any(i not in owned for i in diff):
         die('bytes changed outside the declared patches')   # cannot happen; belt and braces
 
-    c = zlib.compressobj(9, zlib.DEFLATED, -15, 9)
-    gz = GZ_HDR + c.compress(raw) + c.flush() + (zlib.crc32(raw).to_bytes(4, 'little') + len(raw).to_bytes(4, 'little'))
-    body = gz + b'\0' * ((-(len(gz) + 4)) % 512)
-    img_bin = body + add_sum(body).to_bytes(4, 'little')
-
-    # re-check exactly what the device checks
-    assert len(img_bin) % 512 == 0 and len(img_bin) >= 0x100001
-    assert add_sum(img_bin[:-4]) == int.from_bytes(img_bin[-4:], 'little')
-    assert zlib.decompressobj(16 + 15).decompress(img_bin) == raw
-    assert add_sum(raw[:-4]) == int.from_bytes(raw[-4:], 'little')
-    assert raw[0x94:0x98] == b'R039'
-    package(img_bin, raw, name or '+'.join(argv), manifest)
+    return package(pack(raw), raw, name, manifest)
 
 
 if __name__ == '__main__':

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Rider S510 recovery through the BOOTLOADER USB mode: read back the OS area, or rewrite it with vanilla.
 
-Run with the conda Python (it has tqdm): sudo "$(which python3)" iaprecover.py …
+Needs sudo (libusb must take the device from the OS disk driver): sudo python3 tools/iaprecover.py …
   sudo python3 iaprecover.py [--out FILE] [--bytes N]   read the OS area, compare with vanilla IMG.raw
   sudo python3 iaprecover.py --write-vanilla            write vanilla IMG.raw to the OS area, verify every chunk
 
@@ -20,7 +20,7 @@ Uses libusb through ctypes (no pyusb). sudo is needed so libusb can detach macOS
 """
 import ctypes, ctypes.util, hashlib, os, struct, sys
 
-from tqdm import tqdm
+from progress import tqdm
 
 VID = 0x0483                     # STMicroelectronics (as seen in normal USB mode); PID printed when found
 EP_OUT, EP_IN = 0x01, 0x81
@@ -117,8 +117,10 @@ def write_vanilla(h, van):
 def main():
     args = sys.argv[1:]
     out = args[args.index('--out') + 1] if '--out' in args else 'os_area_readback.bin'
-    van = open(VANILLA, 'rb').read()
-    size = int(args[args.index('--bytes') + 1], 0) if '--bytes' in args else len(van)
+    van = open(VANILLA, 'rb').read() if os.path.isfile(VANILLA) else None   # absent: compare by hash only
+    size = int(args[args.index('--bytes') + 1], 0) if '--bytes' in args else 4026368
+    if '--write-vanilla' in args and van is None:
+        sys.exit(f'{VANILLA} missing — run tools/fetch_firmware.py first')
     h = open_unit()
     if '--write-vanilla' in args:
         try:
@@ -140,6 +142,10 @@ def main():
     got = bytes(got[:size])
     open(out, 'wb').write(got)
     print(f'read {len(got)} B -> {out}  sha256 {hashlib.sha256(got).hexdigest()}')
+    if van is None:
+        stock = any(line.split() == [hashlib.sha256(got).hexdigest(), 'IMG.raw']
+                    for line in open(os.path.join(ROOT, 'firmware', 'SHA256SUMS')))
+        return print('MATCHES stock R039 (by hash)' if stock else 'not stock R039 (patched, or another version)')
     ref = van[:size]
     if got == ref:
         print('MATCHES vanilla IMG.raw' + ('' if size == len(van) else f' (first {size} B)'))

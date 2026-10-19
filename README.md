@@ -1,123 +1,89 @@
-# bryton-S510-mods
+# Rider S510 mods
 
-Unofficial, community-made firmware patches and tools for the **Bryton Rider S510** GPS bike computer.
+Unofficial firmware improvements for the **Bryton Rider S510** GPS bike computer, mostly for structured
+workouts. You build them **in your browser** from Bryton's own firmware, copy two files to the unit, done.
 
-It started as a curiosity: the S510 is a nice unit, but a couple of things in its workout screen annoyed me
-(a full-screen "next step" popup that hides the data on short intervals, a very jumpy power number). So I
-reverse-engineered how the firmware is built, updated and booted, made sure a unit can always be recovered,
-and then started patching it. This repo contains the tooling and the patches — **not** Bryton's firmware: you
-download that yourself from Bryton's update server, and the scripts apply the patches on your machine.
+**→ [Open the web builder](https://taladjidi.github.io/bryton-S510-mods/)**
+
+<!-- photos: put before/after pictures in site/img/ (workout.jpg is shown on the web builder) and link them here -->
+
+## What it changes
+
+| Change | Patch |
+|--------|-------|
+| **3 countdown beeps** (3-2-1) before a workout step ends, instead of ~9 | `P1` |
+| The full-screen "next step" popup becomes a **small strip over the chart** (next duration + target), without dimming the screen | `P3` |
+| Fix: that strip always hides when the step changes (even on 15 s intervals) | `P4` |
+| **Tap the big power number** on a power step to switch between instant, 3 s, 10 s and 30 s average power. The box shows `3s` / `10s` / `30s`; the choice is kept across restarts. | `P5` |
+
+All four together are the **workout** set — the default in the web builder. Your settings, rides and workouts
+are kept.
 
 > [!WARNING]
-> **Not affiliated with or endorsed by Bryton.** Flashing modified firmware can make your unit unusable and
-> may void your warranty. Everything here was tested on **one** unit, firmware **R039** / bootloader **R002**,
-> from macOS. Read the whole procedure, do the recovery test first, and use it at your own risk.
+> **Not affiliated with or endorsed by Bryton.** Use at your own risk; it may void your warranty. Tested on
+> **one** unit, firmware **R039**. See [Is it safe?](#is-it-safe) below.
 
-## What you get
+## Try it
 
-| Patch | What it does | Status |
-|-------|--------------|--------|
-| `T1` | Renames the English data-field title "3s PW" to "3s QW". Pointless on purpose: a harmless, visible change to prove the build → flash path. | ✅ flashed and running |
-| `P1` | Workout countdown: **3 beeps** (3, 2, 1 s) before a timed step ends instead of ~9. | ✅ flashed, works |
-| `P3` | Workout "next step" popup becomes a **small strip over the chart** (next duration + next target), without dimming the whole screen. | ✅ flashed, works (with P4) |
-| `P4` | Fix: the strip/popup only stays while the step-end countdown runs (with P1+P3 alone it could stay up for a whole step). First patch that changes code. | ✅ flashed, works |
-| `P5` | Workout screen: **tap the big power number** on a power step to cycle instant → 3 s → 10 s → 30 s average. The box header shows `3s` / `10s` / `30s` (stock icon for instant); the choice survives restarts. New code in unused space at the end of the image. | ✅ flashed, works |
-| `D1` | Debug aid: save the firmware's debug log to `\Debug` at every boot. Not for normal use. | ✅ flashed (captures only the current boot) |
+1. Plug the S510 into a computer. On its **BRYTON** drive, `System/device.txt` must say `Version=R039` under
+   `[OS]`. Battery **≥ 38 %** (below that the unit silently skips updates).
+2. Open the [web builder](https://taladjidi.github.io/bryton-S510-mods/), keep or change the selection, click
+   **Build my firmware**. Your browser downloads the official firmware from Bryton's server, checks it, and
+   applies the changes — nothing is uploaded anywhere.
+3. Save `IMG.bin` and `update.ini` to the top level of the BRYTON drive (Chrome/Edge can write them directly).
+4. Eject the drive and unplug. The unit restarts, shows an update animation for about a minute, restarts again.
 
-| Tool | What it does |
-|------|--------------|
-| `tools/fetch_firmware.py` | Downloads stock firmware from Bryton's server and checks it is the exact R039 the patches were made for |
-| `build.py` | Applies patches to stock firmware and builds a flashable `IMG.bin` + `update.ini`, re-checking everything the unit checks |
-| `deploy.py` | Builds, copies to the unit's USB drive, verifies the copy, ejects, logs |
-| `tools/iaprecover.py` | **Recovery**: reads back, or rewrites with stock, the firmware area of the unit through its bootloader — works even if the firmware no longer boots |
-| `tools/ewstr.py` | Decoder/encoder for the firmware's compressed text blocks (Embedded Wizard LZW) |
-| `ghidra/` | Ghidra scripts used for the analysis (see [ghidra/README.md](ghidra/README.md)) |
+**Back to stock:** same steps with **Back to stock firmware** — that installs Bryton's original file, unchanged.
 
-How the unit updates, boots and stores its UI text, and what the patches change: [docs/how-it-works.md](docs/how-it-works.md).
-Every check and every flash done so far: [docs/validation.md](docs/validation.md).
+## Bryton updates
 
-## Requirements
+Patched firmware still reports version R039, so the Bryton app behaves as before and only offers an update
+when Bryton publishes a new version. Accepting it installs Bryton's firmware (the changes are gone until they
+are adapted to the new version); declining keeps your patched R039. The patches can't be applied to the wrong
+firmware: the builder refuses anything that isn't exactly R039. A
+[scheduled check](.github/workflows/watch-bryton-firmware.yml) opens an issue here when Bryton releases a new
+version — watch the repository to be told.
 
-- A Rider S510 on firmware **R039** (check `System/device.txt` on its USB drive: `[OS] Version=R039`)
-- macOS (the only platform tested), Python ≥ 3.8 with `tqdm` (`pip install tqdm`)
-- For recovery: `libusb` (`brew install libusb`) and `sudo`
-- A USB cable, battery **≥ 38 %** (the unit refuses to update below that)
+## Is it safe?
+
+- The **bootloader** (the part that starts the firmware) is never modified. It has its own USB recovery mode
+  that can rewrite the stock firmware even when a patched one doesn't start — proven on the test unit.
+  How: [docs/recovery.md](docs/recovery.md) (needs a Mac or Linux computer with Python).
+- Every build re-checks everything the unit checks before it accepts an update, and patches can only change
+  the bytes they declare. See [Checks behind this](#checks-behind-this) and [docs/validation.md](docs/validation.md).
+- The bike computer itself does no signature check: like stock firmware, it installs whatever is placed on its
+  drive. Only use builds you made yourself from this page or these scripts.
+
+## Command line (for tinkerers)
+
+Python ≥ 3.8 on macOS, Linux or Windows; `tqdm` is optional (progress bars).
 
 ```sh
 git clone https://github.com/taladjidi/bryton-S510-mods && cd bryton-S510-mods
-python3 tools/fetch_firmware.py          # downloads to firmware/R039/, must print "OK (stock R039)" twice
+python3 tools/fetch_firmware.py      # stock R039 from Bryton's server, must print "OK (stock R039)" twice
+python3 deploy.py workout            # build + copy to the BRYTON drive + verify (macOS also ejects)
+python3 deploy.py vanilla            # back to stock
+python3 deploy.py -n mine P1 P5      # your own selection; build.py alone builds without copying
 ```
 
-If it prints `DOES NOT MATCH R039`, Bryton has published newer firmware. **Stop**: the patches only apply to
-R039 (`build.py` would refuse anyway), and a unit already updated past R039 is not supported.
+Every build starts from stock: installing `P1 P5` removes anything else you had. `deploy.py` keeps a local
+`FLASHLOG.md` of what you installed.
 
-## The safe procedure
+| Developer patch | What it does |
+|-----------------|--------------|
+| `T1` | Renames the data-field title "3s PW" to "3s QW": a harmless visible change, used to prove the build → install path |
+| `D1` | Saves the firmware's debug log to `\Debug` at every start |
 
-The firmware itself has no protection against a bad image: once an image is written, the bootloader runs it
-without any check. What makes experimenting safe is that the **bootloader is never touched** by these patches
-and has its own USB mode that can read and rewrite the firmware area. So the order is: **prove you can recover
-first, then flash.**
+| Tool | What it does |
+|------|--------------|
+| `site/` | The web builder (`builder.js` is a port of `build.py`; `test.mjs` checks they agree) |
+| `tools/fetch_firmware.py` | Downloads stock firmware from Bryton and checks it is exactly R039 (or takes your unit's readback) |
+| `build.py` / `deploy.py` | Apply patches and build `IMG.bin` + `update.ini` / also copy them to the unit |
+| `tools/iaprecover.py` | Recovery through the bootloader: read back, or rewrite with stock ([docs/recovery.md](docs/recovery.md)) |
+| `tools/ewstr.py` | Decoder/encoder for the firmware's compressed text blocks |
+| `ghidra/` | Ghidra scripts used for the analysis — not needed to use the patches |
 
-### Step 1 — enter bootloader mode ("Engineer Mode")
-
-1. Plug the unit into the Mac (it shows the BRYTON drive / charging screen, that's fine).
-2. Press **all four buttons at once** to reboot it.
-3. As soon as the screen goes off, release the others but **keep holding Page** (lower-right button, ≡).
-4. The screen shows **"Engineer Mode"**. macOS now sees a ~272 MB *unformatted* disk instead of the 31 GB BRYTON
-   drive (if macOS asks to initialise it: **Ignore**). That is the bootloader's own USB mode.
-
-> A unit that is switched off and then plugged in does *not* go through the bootloader — it only wakes up to
-> show the charging screen. The four-button reboot is what makes the bootloader run with Page held.
-
-Leaving: just unplug. The bootloader restarts the unit normally.
-
-### Step 2 — read back your firmware (read-only, cannot harm the unit)
-
-```sh
-sudo "$(which python3)" tools/iaprecover.py --out build/readback.bin
-```
-
-It reads the whole firmware area (≈4 MB, under a minute) through the bootloader and compares it with stock
-R039. You want: **`MATCHES vanilla IMG.raw`**. This proves (a) your unit runs stock R039 and (b) your Mac can
-talk to the bootloader. `sudo` is needed so libusb can take the device away from macOS's disk driver.
-
-### Step 3 — recovery write test (rewrite stock over stock)
-
-Still in Engineer Mode:
-
-```sh
-sudo "$(which python3)" tools/iaprecover.py --write-vanilla      # type "write" when asked
-sudo "$(which python3)" tools/iaprecover.py --out build/after.bin  # independent full readback
-```
-
-This writes the stock image over itself, 2 KB at a time, reading every chunk back (the bootloader only reports
-write errors on an internal debug port, so the read-back is the real check). Because every byte written equals
-what is already there, even an interrupted run leaves the unit as it was. Unplug, check it boots normally.
-
-**Once step 3 has passed, you have a proven way back from a unit that doesn't boot.** That is the same command
-you would run if a patch ever went wrong.
-
-### Step 4 — flash a patch
-
-Unplug, let the unit start normally, plug it in again (BRYTON drive mounted), then:
-
-```sh
-./deploy.py T1                     # or: ./deploy.py -n workout-power P1 P3 P4 P5
-```
-
-`deploy.py` builds the package from stock + the patches you name, checks the drive really is the S510, copies
-`IMG.bin` and `update.ini` to its root, verifies the copies, ejects it and appends an entry to your local
-`FLASHLOG.md`. **Unplug**: the unit restarts, shows the firmware-update animation, installs the update and
-restarts again. Check the change, and write what you saw in `FLASHLOG.md`.
-
-Every build starts from stock: flashing `P1 P3 P4` removes `T1` unless you list it again.
-
-### Going back to stock
-
-- **Unit boots:** `./deploy.py vanilla` (exactly Bryton's original file), then unplug — same as a patch.
-- **Unit does not boot:** Step 1 (Engineer Mode) + `sudo "$(which python3)" tools/iaprecover.py --write-vanilla`.
-- Never put an `IAP.bin` (bootloader) on the drive: the update code would flash it into the chip, and a bad
-  bootloader is the one thing these tools cannot recover from. `deploy.py` refuses if it finds one.
+How the unit updates, boots and stores its UI, and what each patch changes: [docs/how-it-works.md](docs/how-it-works.md).
 
 ## Checks behind this
 
@@ -125,16 +91,20 @@ Short version of [docs/validation.md](docs/validation.md):
 
 - The tools reproduce **every check the unit makes** on an update (image checksum, gzip, padding, package
   checksum, size limits) and re-verify the built package by decompressing it again.
-- `./build.py vanilla` reproduces Bryton's `img.bin` **byte for byte**; patched builds differ from stock **only**
+- Going back to stock installs Bryton's original `img.bin` unchanged. Patched builds differ from stock **only**
   in the declared bytes (plus the 4-byte checksum), which `build.py` checks.
+- The web builder runs the same checks and must produce exactly the same firmware as `build.py` (checked on
+  every push by GitHub Actions, together with building every patch).
 - Patches identify what they replace by **hash**, not by copying it: a wrong firmware, wrong address, two
   overlapping patches or a patch applied twice are refused.
 - The text-block encoder reproduces Bryton's compressed blocks **byte for byte** before it is trusted to write one.
-- On the unit: full readback == stock, full stock rewrite + readback == stock and boots, `T1` flashed and running.
+- On the unit: full readback == stock, full stock rewrite + readback == stock and boots, then every patch flashed
+  and used on real workouts (details in validation.md).
 
 ## Writing patches
 
 ```
+title:  short name shown in the web builder
 desc:   one line
 source: where the change is explained
 0xADDR  sha256:<first 16 hex of sha256(original bytes)>  <new bytes, hex>
