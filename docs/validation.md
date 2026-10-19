@@ -28,7 +28,7 @@ R039, bootloader R002, flashed from macOS.
 | 4 | `P1` + `P3` + `D1` | `deploy.py` | boots; debug logs saved at each boot but only contain that boot (RAM log doesn't survive the 4-button reboot) |
 | 5 | `P1` + `P3` + `P4` | P4 instructions checked first with Ghidra's disassembler (`ghidra/scripts/PatchCheck.java`), then `deploy.py` | boots; 3 beeps; strip appears at 3 s and hides after every step change (incl. 15 s intervals), never sticks |
 | 6 | `P1` + `P3` + `P4` + `P5` (= `workout`) | P5 new code assembled with clang, every instruction checked with `PatchCheck.java`, then `deploy.py` | boots; tapping the centre power cycles instant / 3s / 10s / 30s with the header label, smoothing as expected, mode kept across restarts |
-| 7 | first install built by the **web builder** | — | **not done yet**: needed before announcing the web builder (its `IMG.bin` is compressed differently from build.py's) |
+| 7 | `workout` built by the **web builder** | built on the live site, files written to the drive root, normal update at startup | installs and runs exactly like the `deploy.py` builds (its `IMG.bin` is compressed by the browser, not zlib -9) |
 
 Side observation after #2: battery read 100 % after the session vs 90 % before. Explained by the voltage-only
 battery gauge after a long time on USB (see [how-it-works.md](how-it-works.md#battery-percentage)); the battery
