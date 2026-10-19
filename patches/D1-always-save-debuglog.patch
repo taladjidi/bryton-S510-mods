@@ -1,0 +1,4 @@
+desc:   DEBUG AID (not for normal use): save the firmware's 64 KB debug message buffer to \Debug\<date><time>.log at every boot, not only after a fault
+source: docs/how-it-works.md#debug-log; boot-time Log_SaveDebugMsgToFile 0xd0189e0a, the "only if a reset-cause flag is set" branch becomes a nop
+# use: after the event to capture, reboot with the 4 buttons WITHOUT USB (USB mode and power-off both reset the buffer)
+0xd0189e6c  sha256:ffca757594081fd1  00bf  # bne 0xd0189eea (skip save) -> nop

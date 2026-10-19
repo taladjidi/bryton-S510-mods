@@ -130,3 +130,13 @@ types when importing.
 Voltage only: a 100-entry table maps millivolts to percent (3450 mV = 0 %, ≈3790 mV = 50 %, ≥ 4140 mV = 100 %).
 The last value is kept in a backup register and only allowed to go **up while on USB** and **down while on
 battery**, so after a long time on the cable the unit can show 100 % for a while. Not a bug in the patches.
+
+## Debug log
+
+Everything the firmware prints (it is chatty: sensor events, workout steps, "Time on Interval...", UI events)
+also goes into a 64 KB ring buffer in RAM that survives a warm reset. At boot, `0xd0189e0a` writes it to
+`\Debug\YYYYMMDDhhmmss.log` on the drive — but only when a reset-cause flag is set (after a fault); a normal
+reboot discards it. Patch `D1` removes that condition so every reboot saves the log: do the thing you want to
+capture, then reboot with the four buttons **without USB connected** (entering USB mode re-initialises the
+buffer and a power-off clears RAM), then plug in and read `Debug/*.log`. The Bryton app can upload files from
+`\Debug`, so delete them when done if you care.
