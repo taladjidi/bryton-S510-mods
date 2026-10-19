@@ -25,7 +25,7 @@ R039, bootloader R002, flashed from macOS.
 | 2 | First patched firmware: `T1` | `deploy.py T1`, normal update at startup | update animation, boots, field title reads "3s QW" |
 | 3 | `P1` + `P3` | `deploy.py` | boots; 3 beeps; strip over the chart without dimming. Issue: sometimes the strip stays up the whole next step (re-armed after the step change) |
 | 4 | `P1` + `P3` + `D1` | `deploy.py` | boots; debug logs saved at each boot but only contain that boot (RAM log doesn't survive the 4-button reboot) |
-| 5 | `P1` + `P3` + `P4` | — | P4 instructions checked with Ghidra's disassembler (`ghidra/scripts/PatchCheck.java`); not flashed yet |
+| 5 | `P1` + `P3` + `P4` | P4 instructions checked first with Ghidra's disassembler (`ghidra/scripts/PatchCheck.java`), then `deploy.py` | boots; 3 beeps; strip appears at 3 s and hides after every step change (incl. 15 s intervals), never sticks |
 
 Side observation after #2: battery read 100 % after the session vs 90 % before. Explained by the voltage-only
 battery gauge after a long time on USB (see [how-it-works.md](how-it-works.md#battery-percentage)); the battery
