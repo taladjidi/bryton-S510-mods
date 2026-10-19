@@ -1,0 +1,7 @@
+desc:   tap the centre value on a power step to cycle instant / 3 s / 10 s / 30 s power; header shows 3s/10s/30s; kept in RTC backup reg 8
+source: patches/P5-centre-power-mode.s (cave code), docs/how-it-works.md (P5)
+# three 4-byte hooks -> code in the zero padding at the image end (0xd03d69d0..0xd03d6ab4, unused: see docs)
+0xd01ab3fe  sha256:1ba88108471448bf  2bf2e7fa  # H1 Workout_ReadPowerLive: ldr.w r0,[r8,#0xc] -> bl pick_live
+0xd0234d8a  sha256:5b26f77bd03f1f6f  a1f136fe  # H2 OnTouchRelease tap path: add.w r3,r4,#0x9c -> bl on_tap
+0xd0234a4a  sha256:4ea702773f9b80fd  a2f101f8  # H3 LoadIntervalData power case: bl 0xd0234b56 -> bl header
+0xd03d69d0  sha256:fb678f67aea5293e  d8f80c003149096811f003010cd0304a12682432a24207d102b5042023f636fdbde8024050f82100704702b52848006808b390f86000082803d00c2801d00d2819d182b042f624402044d0e90001cde9000141f2907020440fc88ef52cf802b048b11a490868013000f003000860bde802405ef6c1b9bde8024004f19c0370471249096811f0030105d1032141f6d01020446cf52cba20b50ea505eb810541f6d010204400216cf5b0fa28462ef572ff014641f6b82020446ef5a2f941f6b820204401216ef5f2f920bd000070400058bcde03300000bf00337300003130730033307300  # cave: P5-centre-power-mode.s (228 B)
