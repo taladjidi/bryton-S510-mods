@@ -41,8 +41,12 @@
   progress { width: 100%; height: 8px; accent-color: var(--accent); }
   #log { font: 13px/1.5 ui-monospace, Menlo, Consolas, monospace; white-space: pre-wrap; color: var(--muted); margin: 10px 0 0; }
   #log .err { color: var(--err); } #log .ok { color: var(--ok); }
-  figure { margin: 16px 0; } figure img { width: 100%; border-radius: 8px; border: 1px solid var(--line); }
-  figcaption { color: var(--muted); font-size: .9rem; }
+  h3 { font-size: 1rem; margin: 24px 0 8px; }
+  figure { margin: 0; } figure img { width: 100%; height: auto; display: block; border-radius: 8px; border: 1px solid var(--line); }
+  .grid { display: grid; gap: 12px; } .grid.two { grid-template-columns: 1fr 1fr; max-width: 520px; }
+  .grid.four { grid-template-columns: repeat(4, 1fr); }
+  @media (max-width: 560px) { .grid.four { grid-template-columns: 1fr 1fr; } }
+  figcaption { color: var(--muted); font-size: .85rem; margin-top: 4px; }
   ol li { margin-bottom: 6px; }
   footer { margin-top: 48px; color: var(--muted); font-size: .9rem; border-top: 1px solid var(--line); padding-top: 16px; }
   [hidden] { display: none !important; }
@@ -54,8 +58,25 @@
   <p class="lead">Small improvements to the Bryton Rider S510's workout screen, built into its firmware in your
     browser. Nothing to install.</p>
 
-  <figure><img src="img/workout.jpg" alt="The workout screen with the patches" onerror="this.parentElement.remove()">
-    <figcaption>Workout screen with the patches.</figcaption></figure>
+  <h2>What it changes</h2>
+  <h3>Next step: a strip over the chart instead of a full-screen popup</h3>
+  <div class="grid two">
+    <figure><img src="img/stock-popup.jpg" alt="Stock firmware: the next-step popup dims the screen and covers the data" loading="lazy">
+      <figcaption>Stock: the popup dims the screen and hides your numbers.</figcaption></figure>
+    <figure><img src="img/strip.jpg" alt="Patched: next duration and target in a strip at the top" loading="lazy">
+      <figcaption>Patched: next duration and target at the top; your data stays visible.</figcaption></figure>
+  </div>
+  <p>Also: <strong>3 countdown beeps</strong> (3-2-1) before a step ends instead of ~9, and the strip always hides
+    when the step changes, even on 15 s intervals.</p>
+  <h3>Tap the big power number to smooth it</h3>
+  <div class="grid four">
+    <figure><img src="img/power-instant.jpg" alt="Instant power: stock icon between the targets" loading="lazy"><figcaption>Instant (stock)</figcaption></figure>
+    <figure><img src="img/power-3s.jpg" alt="3 second average: 3s label between the targets" loading="lazy"><figcaption>3 s average</figcaption></figure>
+    <figure><img src="img/power-10s.jpg" alt="10 second average: 10s label between the targets" loading="lazy"><figcaption>10 s average</figcaption></figure>
+    <figure><img src="img/power-30s.jpg" alt="30 second average: 30s label between the targets" loading="lazy"><figcaption>30 s average</figcaption></figure>
+  </div>
+  <p>Each tap on the power box switches to the next one; the label between the target numbers shows which.
+    Your choice is kept when you switch the unit off.</p>
 
   <p class="warn"><strong>Unofficial, not affiliated with Bryton. Use at your own risk.</strong> Tested on one unit on
     firmware R039. Going back to stock is the same simple procedure, and a unit that no longer starts can be

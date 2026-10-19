@@ -5,7 +5,9 @@ workouts. You build them **in your browser** from Bryton's own firmware, copy tw
 
 **→ [Open the web builder](https://taladjidi.github.io/bryton-S510-mods/)**
 
-<!-- photos: put before/after pictures in site/img/ (workout.jpg is shown on the web builder) and link them here -->
+| Stock next-step popup | Patched: strip | Tap: instant | 3 s | 10 s | 30 s |
+|:---:|:---:|:---:|:---:|:---:|:---:|
+| <img src="site/img/stock-popup.jpg" width="130" alt="stock popup"> | <img src="site/img/strip.jpg" width="130" alt="strip"> | <img src="site/img/power-instant.jpg" width="130" alt="instant power"> | <img src="site/img/power-3s.jpg" width="130" alt="3 s power"> | <img src="site/img/power-10s.jpg" width="130" alt="10 s power"> | <img src="site/img/power-30s.jpg" width="130" alt="30 s power"> |
 
 ## What it changes
 
