@@ -63,16 +63,19 @@ version: watch the repository to be told.
   How: [docs/recovery.md](docs/recovery.md) (needs a Mac or Linux computer with Python).
 - Every build re-checks everything the unit checks before it accepts an update, and patches can only change
   the bytes they declare. See [Checks behind this](#checks-behind-this) and [docs/validation.md](docs/validation.md).
-- **There are zero cryptographic checks, anywhere.** No signature, no encryption, no secure hash: not in the
-  bootloader, not in the firmware's update code, not in the Bryton app. The only checks are an additive checksum
-  and the gzip CRC32, which catch a corrupted file but not a deliberately modified one (anyone can recompute them,
-  as `build.py` does). In practice:
-  - **This is how the S510 ships, not something these patches introduce or change.** A stock unit installs any
-    `IMG.bin` + `update.ini` placed on its drive at the next start, just like a patched one.
-  - Anything with access to the drive while it is plugged in can do the same: the computer it is connected to and
-    any program running on it. Only connect the unit to computers you trust.
-  - The bootloader's recovery mode needs the unit in hand (4-button reboot) and checks nothing either.
-  - Only install builds you made yourself, with this page or these scripts, from Bryton's own firmware.
+
+> [!CAUTION]
+> 🔓 **Zero cryptographic checks, anywhere.** 🚫🔐 No signature, no encryption, no secure hash: not in the
+> bootloader, not in the firmware's update code, not in the Bryton app. The only checks are an additive checksum
+> and the gzip CRC32, which catch a corrupted file but not a deliberately modified one (anyone can recompute them,
+> as `build.py` does). **The S510 will install whatever firmware it is given.** 🤷
+>
+> - 📦 **This is how the S510 ships, not something these patches introduce or change.** A stock unit installs any
+>   `IMG.bin` + `update.ini` placed on its drive at the next start, just like a patched one.
+> - 💻 Anything with access to the drive while it is plugged in can do the same: the computer it is connected to
+>   and any program running on it. Only connect the unit to computers you trust.
+> - 🛠️ The bootloader's recovery mode needs the unit in hand (4-button reboot) and checks nothing either.
+> - ✅ Only install builds you made yourself, with this page or these scripts, from Bryton's own firmware.
 
 ## Command line (for tinkerers)
 
