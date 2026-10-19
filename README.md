@@ -33,6 +33,16 @@ are kept.
    **Build my firmware**. Your browser downloads the official firmware from Bryton's server, checks it, and
    applies the changes. Nothing is uploaded anywhere.
 3. Save `IMG.bin` and `update.ini` to the top level of the BRYTON drive (Chrome/Edge can write them directly).
+   They go next to the folders, not inside one:
+   ```
+   BRYTON/
+   ├── Activities/
+   ├── System/
+   ├── Workout/
+   ├── …            (other folders: leave them alone)
+   ├── IMG.bin      ← copy here
+   └── update.ini   ← copy here
+   ```
 4. Eject the drive and unplug. The unit restarts, shows an update animation for about a minute, restarts again.
 
 **Back to stock:** same steps with **Back to stock firmware**, which installs Bryton's original file, unchanged.

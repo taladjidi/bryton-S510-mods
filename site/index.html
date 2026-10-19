@@ -48,6 +48,17 @@
   @media (max-width: 560px) { .grid.four { grid-template-columns: 1fr 1fr; } }
   figcaption { color: var(--muted); font-size: .85rem; margin-top: 4px; }
   ol li { margin-bottom: 6px; }
+  .drive { max-width: 380px; margin: 14px 0; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--card); }
+  .drive .bar { display: flex; align-items: center; gap: 6px; padding: 8px 12px; border-bottom: 1px solid var(--line); font-size: .9rem; }
+  .drive .bar span { width: 10px; height: 10px; border-radius: 50%; background: var(--line); }
+  .drive .bar b { margin-left: 8px; }
+  .drive ul { list-style: none; margin: 0; padding: 6px 0; font-size: .95rem; }
+  .drive li { display: flex; align-items: center; gap: 10px; padding: 4px 14px; }
+  .drive svg { width: 16px; height: 16px; flex: none; color: var(--muted); }
+  .drive li.more { color: var(--muted); font-style: italic; font-size: .85rem; padding-left: 40px; }
+  .drive li.new { background: color-mix(in srgb, var(--accent) 14%, transparent); font-weight: 600; }
+  .drive li.new svg { color: var(--accent); }
+  .drive li.new span { margin-left: auto; font-size: .8rem; font-weight: 600; color: var(--accent); }
   footer { margin-top: 48px; color: var(--muted); font-size: .9rem; border-top: 1px solid var(--line); padding-top: 16px; }
   [hidden] { display: none !important; }
 </style>
@@ -112,6 +123,13 @@
     </div>
     <p id="dlhelp">Copy <code>IMG.bin</code> and <code>update.ini</code> to the top level of the BRYTON drive
       (next to the <code>System</code> folder), replacing any files with the same name.</p>
+    <figure class="drive" aria-label="The BRYTON drive after copying: IMG.bin and update.ini sit next to the folders, not inside one">
+      <div class="bar"><span></span><span></span><span></span><b>BRYTON</b></div>
+      <ul><li><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1 3.5h5l1.5 1.5H15v8H1z" fill="currentColor"/></svg>Activities</li><li><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1 3.5h5l1.5 1.5H15v8H1z" fill="currentColor"/></svg>Map</li><li><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1 3.5h5l1.5 1.5H15v8H1z" fill="currentColor"/></svg>PlanTrip</li><li><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1 3.5h5l1.5 1.5H15v8H1z" fill="currentColor"/></svg>System</li><li><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1 3.5h5l1.5 1.5H15v8H1z" fill="currentColor"/></svg>Tracks</li><li><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1 3.5h5l1.5 1.5H15v8H1z" fill="currentColor"/></svg>Workout</li><li class="more">… other folders, leave them alone</li><li class="new"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 1h7l3 3v11H3z" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>IMG.bin<span>copy here</span></li><li class="new"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 1h7l3 3v11H3z" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>update.ini<span>copy here</span></li></ul>
+    </figure>
+    <p>Check the names: exactly <code>IMG.bin</code> and <code>update.ini</code>. Browsers sometimes rename a
+      second download to <code>update (1).ini</code>; rename it back. Don't put the files inside <code>System</code>
+      or any other folder.</p>
     <h2><span class="n">5</span> Install</h2>
     <ol>
       <li><strong>Eject</strong> the BRYTON drive, then unplug the cable.</li>
