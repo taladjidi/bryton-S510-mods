@@ -1,0 +1,11 @@
+# Bryton's firmware is never committed: download it with tools/fetch_firmware.py
+firmware/*
+!firmware/SHA256SUMS
+# build outputs (patched images) and readbacks
+build/
+*.bin
+*.raw
+# your personal flash log (deploy.py appends to it)
+FLASHLOG.md
+__pycache__/
+.DS_Store

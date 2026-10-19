@@ -1,0 +1,4 @@
+desc:   TEST: English data-field title for field 28 (3 s power) -> "3s QW" (visible, harmless; proves build+flash path)
+source: docs/how-it-works.md (strings); English field-title block 0xd0000eec, entry 0x11b; re-encoded by tools/ewstr.py
+# block is 509 B in vanilla and 510 B after the edit; the next block starts at 0xd00010f0 (room 516 B, zero padded)
+string  0xd0000eec  0x11b  sha256:ce99c89e67dd62e4  room=516  "3s QW"

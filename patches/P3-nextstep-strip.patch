@@ -1,0 +1,11 @@
+desc:   next-step popup as a 72 px strip over the chart, target + duration, no dimming
+source: docs/how-it-works.md#workout-next-step-popup (popup layout)
+0xd0086d6c  sha256:19a6dab4637990ad  00000000  # backdrop m64 colour: dark 0xc8000000 -> transparent
+0xd0086d70  sha256:c9ec593f72488a67  0000000000000000f000000048000000  # PANEL 0,192,240,320 -> 0,0,240,72
+0xd0086dc0  sha256:ae5e395837741901  0a00000002000000e600000027000000  # TEXT_DURATION -> 10,2,230,39
+0xd0086dd0  sha256:f8b6dbf6abca68d1  0a0000001e000000e600000043000000  # TEXT_TARGET -> 10,30,230,67
+0xd0086e00  sha256:d62e91f0d87e4709  0000000046000000f000000048000000  # green separator -> 0,70,240,72
+0xd0086d98  sha256:d0f1b022c8563efa  d0feffff00000000c0ffffff25000000  # header text -> off-screen
+0xd0086d80  sha256:666b49c763f330a6  d0feffff00000000c0ffffff25000000  # header N/M text + close area -> off-screen
+0xd0086da8  sha256:532e755243485e29  d0feffff00000000c0ffffff25000000  # step kind text -> off-screen
+0xd0158fbc  sha256:ac85bced3f8f3849  e06d08d0  # pool -> BAR rect: use SUBDIALOG_B rect (off-screen); shared BAR untouched

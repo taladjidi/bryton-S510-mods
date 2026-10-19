@@ -1,0 +1,3 @@
+desc:   3 countdown beeps and next-step strip from 3 s before step end (time steps)
+source: docs/how-it-works.md#workout-next-step-popup (step-end countdown window)
+0xd01aaf48  sha256:a80190875742dde0  0428  # Workout_CheckStepEndCountdown: cmp r0,#0xa -> cmp r0,#0x4
