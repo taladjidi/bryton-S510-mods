@@ -68,6 +68,8 @@ python3 deploy.py vanilla            # back to stock
 python3 deploy.py -n mine P1 P5      # your own selection; build.py alone builds without copying
 ```
 
+Tests (offline, need the stock firmware): `python3 tests/test_tools.py`. GitHub Actions runs them on every push.
+
 Every build starts from stock: installing `P1 P5` removes anything else you had. `deploy.py` keeps a local
 `FLASHLOG.md` of what you installed.
 

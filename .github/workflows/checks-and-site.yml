@@ -1,5 +1,5 @@
-# Every push: download stock R039 from Bryton, build every patch and the "workout" preset, check that bad
-# input is refused, and that the web builder (site/) produces the same image as build.py.
+# Every push: download stock R039 from Bryton and run tests/test_tools.py (every patch and the "workout" preset,
+# bad input refused, deploy to a fake drive, readback import, web builder (site/) == build.py).
 # Pushes to main then publish the web builder to GitHub Pages — only if all of that passed.
 name: checks and site
 on:
@@ -22,16 +22,8 @@ jobs:
           key: firmware-${{ hashFiles('firmware/SHA256SUMS') }}
       - name: Stock firmware (from Bryton's server; build.py re-checks the hashes)
         run: '[ -f firmware/R039/img.bin ] || python3 tools/fetch_firmware.py'
-      - name: Build every patch, the preset and stock
-        run: |
-          ./build.py vanilla
-          for p in patches/*.patch; do ./build.py "$(basename "$p" | cut -d- -f1)"; done
-          ./build.py workout
-      - name: Bad input is refused
-        run: |
-          if ./build.py -n twice P1 P1; then echo "a patch applied twice was accepted"; exit 1; fi
-      - name: Web builder == build.py
-        run: node site/test.mjs
+      - name: Tests (every patch, the preset, refusals, deploy to a fake drive, readback, web builder == build.py)
+        run: python3 -W ignore::ResourceWarning tests/test_tools.py -v
 
   site:
     needs: checks

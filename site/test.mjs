@@ -10,7 +10,7 @@ const patch = (id) => {
 const raw = await unpackStock(new Uint8Array(readFileSync('firmware/R039/img.bin')));
 const out = await applyPatches(raw, PRESETS.workout.map(patch));
 const img = await pack(out);
-const want = readFileSync('build/workout/MANIFEST.txt', 'utf8').match(/IMG \(raw\).*sha256 (\w+)/)[1];
+const want = readFileSync((process.env.BUILD_DIR || 'build') + '/workout/MANIFEST.txt', 'utf8').match(/IMG \(raw\).*sha256 (\w+)/)[1];
 if ((await sha256(out)) !== want) throw new Error('web builder image differs from build.py');
 let refused = false;
 try { await applyPatches(out, [patch('P1')]); } catch { refused = true; }   // already patched -> must refuse
