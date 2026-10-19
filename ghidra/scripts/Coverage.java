@@ -1,4 +1,4 @@
-// Coverage.java — read-only: count named vs default-named (FUN_/thunk_FUN_) functions per region.
+// Coverage.java: read-only: count named vs default-named (FUN_/thunk_FUN_) functions per region.
 import ghidra.app.script.GhidraScript;
 import ghidra.program.model.listing.Function;
 import java.io.PrintWriter;

@@ -1,4 +1,4 @@
-// Unname.java — undo bad generated names. Args: <file of "0xADDR name" lines>. For each line, if the
+// Unname.java: undo bad generated names. Args: <file of "0xADDR name" lines>. For each line, if the
 // symbol at ADDR has exactly that name: remove the function created there (if any) and the label,
 // then clear the bogus disassembly so the bytes revert to undefined data. Touches nothing else.
 import ghidra.app.script.GhidraScript;

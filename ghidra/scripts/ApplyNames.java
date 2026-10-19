@@ -1,4 +1,4 @@
-// ApplyNames.java — bulk-rename functions in the current program from a text file.
+// ApplyNames.java: bulk-rename functions in the current program from a text file.
 // Input (script arg 0): lines of "0xADDRESS name". Renames the function at ADDRESS,
 // or creates a user label if no function is there. Symbol-naming only; it does not
 // read, modify, or interact with any device. Used for the Bryton S510 reconstruction.

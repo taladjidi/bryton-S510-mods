@@ -1,4 +1,4 @@
-// ImageWrites.java — read-only: WRITE references whose target lies in the image block "ram" (is the image read-only?).
+// ImageWrites.java: read-only: WRITE references whose target lies in the image block "ram" (is the image read-only?).
 // Args: <outfile>
 import ghidra.app.script.GhidraScript;
 import java.io.PrintWriter;

@@ -1,4 +1,4 @@
-// BsimMatch.java — read-only: query every function of the current program against a BSim
+// BsimMatch.java: read-only: query every function of the current program against a BSim
 // database of compiled open-source libraries; write the best matches as TSV for review.
 // Args: <bsimURL e.g. file:/.../libs> <out.tsv> [simThreshold=0.7] [0xADDR,0xADDR,... only these] [ALLNOTES]
 // ALLNOTES: also write <out.tsv>.all with every (addr, lib_func, sim, signif) note (max 50 per function).

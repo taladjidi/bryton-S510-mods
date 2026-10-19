@@ -1,4 +1,4 @@
-// FragStats.java — read-only: classify default-named functions by how they are reached.
+// FragStats.java: read-only: classify default-named functions by how they are reached.
 //   called   : at least one CALL reference (real function)
 //   tail1    : only jump references, all from ONE other function   (mis-split fragment → merge candidate)
 //   tailN    : only jump references, from several functions        (IAR shared cross-call tail)

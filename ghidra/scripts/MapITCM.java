@@ -1,4 +1,4 @@
-// MapITCM.java — maps the ITCM kernel copy (exec 0x00000000, load 0xd0351a68, 64 KB) as a
+// MapITCM.java: maps the ITCM kernel copy (exec 0x00000000, load 0xd0351a68, 64 KB) as a
 // byte-mapped block, then replaces Ghidra's EXT_FUN_xxxx placeholders with real Thumb functions
 // and re-points their thunks. Program-structure edit only; touches no device.
 import ghidra.app.script.GhidraScript;

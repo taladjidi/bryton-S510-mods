@@ -1,4 +1,4 @@
-// FileMap.java — read-only: for each string naming a source file (*.c/*.cpp/*.h), list how many
+// FileMap.java: read-only: for each string naming a source file (*.c/*.cpp/*.h), list how many
 // functions reference it and their address span. Gives a rough module -> address-range map.
 import ghidra.app.script.GhidraScript;
 import ghidra.program.model.address.Address;

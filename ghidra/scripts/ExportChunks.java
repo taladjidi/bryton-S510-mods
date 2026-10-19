@@ -1,4 +1,4 @@
-// ExportChunks.java — read-only: export still-unnamed functions (FUN_*) in [START,END) to text chunks for
+// ExportChunks.java: read-only: export still-unnamed functions (FUN_*) in [START,END) to text chunks for
 // offline review by agents. Each entry: address, size, callers, callees, string refs, decompiled C (capped).
 // Args: <outdir> <0xSTART> <0xEND> [charBudgetPerChunk=110000] [maxCLines=90]
 // Chunks are address-ordered so neighbouring (usually same-module) code stays together.

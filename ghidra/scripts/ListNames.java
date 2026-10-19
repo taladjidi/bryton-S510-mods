@@ -1,4 +1,4 @@
-// ListNames.java — read-only: "0xADDR name" for every function (current project state). Arg: outfile.
+// ListNames.java: read-only: "0xADDR name" for every function (current project state). Arg: outfile.
 import ghidra.app.script.GhidraScript;
 import ghidra.program.model.listing.Function;
 import java.io.PrintWriter;

@@ -1,10 +1,10 @@
-// EwStructs.java — build EW_<Class> structures for the Embedded Wizard classes and type `this` of their methods.
+// EwStructs.java: build EW_<Class> structures for the Embedded Wizard classes and type `this` of their methods.
 //   size     = descriptor word[4]
 //   super    = EW_<Ancestor> at offset 0
 //   members  = "<M>__Init(param_1 + 0xOFF, ..." calls in <Class>__Init (also via "x = param_1 + 0xOFF;")
 //   methods  = functions named <Class>__* / <Class>_* (longest class-prefix wins): param 0 -> EW_<Class> *
 // The ~35 __Init that fail with "Bad partial clone" are decompiled with all inline flags cleared (see Dump.java u:).
-// Args: <report file> <EW_CLASSES.csv> [APPLY]   — without APPLY nothing is changed (run with -readOnly anyway).
+// Args: <report file> <EW_CLASSES.csv> [APPLY]: without APPLY nothing is changed (run with -readOnly anyway).
 import ghidra.app.decompiler.DecompInterface;
 import ghidra.app.script.GhidraScript;
 import ghidra.program.model.data.*;

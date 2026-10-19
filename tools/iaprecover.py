@@ -101,7 +101,7 @@ def write_vanilla(h, van):
     for line in open(os.path.join(ROOT, 'firmware', 'SHA256SUMS')):
         hsh, name = line.split()
         if name == 'IMG.raw' and hashlib.sha256(van).hexdigest() != hsh:
-            sys.exit('vanilla IMG.raw fails SHA256SUMS — refusing to write')
+            sys.exit('vanilla IMG.raw fails SHA256SUMS; refusing to write')
     if len(van) % CHUNK:
         sys.exit('image size is not a multiple of 2 KB')
     n = len(van) // CHUNK
@@ -111,7 +111,7 @@ def write_vanilla(h, van):
         want = van[k * CHUNK:(k + 1) * CHUNK]
         command(h, k, 2 * k + 1, write=want)
         if command(h, k, 2 * k + 2) != want:
-            sys.exit(f'chunk {k} (offset {k * CHUNK:#x}) did not read back as written — STOP, re-run to retry')
+            sys.exit(f'chunk {k} (offset {k * CHUNK:#x}) did not read back as written; STOP, re-run to retry')
 
 
 def main():
@@ -120,7 +120,7 @@ def main():
     van = open(VANILLA, 'rb').read() if os.path.isfile(VANILLA) else None   # absent: compare by hash only
     size = int(args[args.index('--bytes') + 1], 0) if '--bytes' in args else 4026368
     if '--write-vanilla' in args and van is None:
-        sys.exit(f'{VANILLA} missing — run tools/fetch_firmware.py first')
+        sys.exit(f'{VANILLA} missing; run tools/fetch_firmware.py first')
     h = open_unit()
     if '--write-vanilla' in args:
         try:

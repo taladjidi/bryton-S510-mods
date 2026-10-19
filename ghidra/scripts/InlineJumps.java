@@ -1,4 +1,4 @@
-// InlineJumps.java — read-only: list inline-flagged functions containing a computed (non-return) jump.
+// InlineJumps.java: read-only: list inline-flagged functions containing a computed (non-return) jump.
 // Args: <outfile> [file of function addresses: then scan those + their inline callees, recursively]
 import ghidra.app.script.GhidraScript;
 import ghidra.program.model.listing.Function;

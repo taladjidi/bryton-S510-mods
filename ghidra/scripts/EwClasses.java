@@ -1,4 +1,4 @@
-// EwClasses.java — read-only: walk Embedded Wizard class descriptors ("CLAS" magic) and emit
+// EwClasses.java: read-only: walk Embedded Wizard class descriptors ("CLAS" magic) and emit
 // candidate names as "0xADDR name" lines (arg 0 = names file, arg 1 = class table csv).
 //   desc[1] = "Unit::Class"  -> C prefix "UnitClass" (EW's own generated-code convention)
 //   desc[11..13] = _Init / _ReInit / _Done  -> <Prefix>__Init / __ReInit / __Done (original names)

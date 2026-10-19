@@ -1,4 +1,4 @@
-@ P5 — tap the centre value on a power step to cycle instant / 3 s / 10 s / 30 s power (persisted in RTC backup reg 8).
+@ P5: tap the centre value on a power step to cycle instant / 3 s / 10 s / 30 s power (persisted in RTC backup reg 8).
 @ Code for the zero padding at the end of the OS image (0xd03d69d0..). Assembled with clang, checked with Ghidra
 @ (ghidra/scripts/PatchCheck.java); the hook instructions are in P5-centre-power-mode.patch.
 @ Firmware addresses below are R039. Branch targets are written relative to `cave` so no linker is needed.

@@ -1,4 +1,4 @@
-// TopCallees.java — read-only: default-named (FUN_) functions ranked by number of call sites.
+// TopCallees.java: read-only: default-named (FUN_) functions ranked by number of call sites.
 // Args: <outfile> [N=200]. Line: "0xADDR callers=K insns=M"
 import ghidra.app.script.GhidraScript;
 import ghidra.program.model.address.Address;

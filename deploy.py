@@ -8,7 +8,7 @@
 
 Plug the unit in normally first (BRYTON drive mounted). After the copy: eject, unplug; the unit installs the
 update during startup (battery >= 38 %) and restarts. Each deploy is appended to your local FLASHLOG.md (not in
-git) with result "pending" — fill in what you saw.
+git) with result "pending"; fill in what you saw.
 """
 import datetime, getpass, glob, hashlib, os, platform, string, subprocess, sys
 
@@ -53,14 +53,14 @@ def main(argv):
     if vol is None:
         hits = find_drive()
         if len(hits) != 1:
-            die(f'found {len(hits)} bike computer drives {hits} — plug it in normally, or pass --drive PATH')
+            die(f'found {len(hits)} bike computer drives {hits}; plug it in normally, or pass --drive PATH')
         vol = hits[0]
     if not os.path.isfile(os.path.join(vol, 'System', 'device.txt')):
         die(f'{vol} is not the bike computer (no System/device.txt)')
     pkg = build.main(argv)
 
     if os.path.exists(os.path.join(vol, 'IAP.bin')):
-        die('IAP.bin is on the drive — never flash a bootloader; remove it by hand and re-run')
+        die('IAP.bin is on the drive. Never flash a bootloader: remove it by hand and re-run')
     for f in ('IMG.bin', 'update.ini'):
         dst = os.path.join(vol, f)
         with open(os.path.join(pkg, f), 'rb') as src, open(dst, 'wb') as out:
@@ -68,7 +68,7 @@ def main(argv):
             out.flush()
             os.fsync(out.fileno())
         if sha(dst) != sha(os.path.join(pkg, f)):
-            die(f'{f} on the drive does not match the build — not ejecting, check the drive')
+            die(f'{f} on the drive does not match the build; not ejecting, check the drive')
     print(f'copied + verified IMG.bin, update.ini -> {vol}')
 
     if platform.system() == 'Darwin':

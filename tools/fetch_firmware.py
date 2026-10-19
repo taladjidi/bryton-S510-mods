@@ -35,7 +35,7 @@ def main(args):
     if '--from-readback' in args:
         raw = open(args[args.index('--from-readback') + 1], 'rb').read()[:4026368]   # readback may be padded
         if hashlib.sha256(raw).hexdigest() != want['IMG.raw']:
-            sys.exit('This readback is not stock R039 — cannot be used as the base for the patches.')
+            sys.exit('This readback is not stock R039; cannot be used as the base for the patches.')
         os.makedirs(dest, exist_ok=True)
         open(os.path.join(dest, 'IMG.raw'), 'wb').write(raw)
         return print(f'IMG.raw  OK (stock R039, from your unit) -> {dest}')
@@ -50,7 +50,7 @@ def main(args):
         ok &= good
         print(f'{name:8} {len(data):>8} B  {"OK (stock R039)" if good else "DOES NOT MATCH R039"}')
     if not ok:
-        sys.exit('Not the R039 these patches were made for — do not use them on this firmware.')
+        sys.exit('Not the R039 these patches were made for; do not use them on this firmware.')
     print(f'saved to {dest}')
 
 

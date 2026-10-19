@@ -1,4 +1,4 @@
-// Histo.java — read-only: function count and code bytes per 256 KB bucket (layout overview).
+// Histo.java: read-only: function count and code bytes per 256 KB bucket (layout overview).
 import ghidra.app.script.GhidraScript;
 import ghidra.program.model.listing.Function;
 import java.io.PrintWriter;

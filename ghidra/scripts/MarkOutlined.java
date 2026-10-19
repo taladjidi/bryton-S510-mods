@@ -1,7 +1,7 @@
-// MarkOutlined.java — find IAR compiler-outlined code stubs and (optionally) mark them inline so the decompiler
+// MarkOutlined.java: find IAR compiler-outlined code stubs and (optionally) mark them inline so the decompiler
 // folds them into their callers. A stub = default-named, no push/stack frame, <= 48 bytes, and its decompile reads
 // caller registers ("unaff_r"). Name: outl_<tail-jump target>_<addr> (or outl_<addr>).
-// Args: <out.txt> [APPLY]   — without APPLY nothing is changed (dry run writes the candidate list).
+// Args: <out.txt> [APPLY]: without APPLY nothing is changed (dry run writes the candidate list).
 import ghidra.app.decompiler.DecompInterface;
 import ghidra.app.decompiler.DecompileResults;
 import ghidra.app.script.GhidraScript;

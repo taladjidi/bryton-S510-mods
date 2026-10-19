@@ -27,5 +27,5 @@ jobs:
           gh issue create -R "$REPO" --title "$title" --body "Bryton's update server now offers OS **$v** for the Rider S510 (the patches here are for **R039**).
 
           - The Bryton app will offer this update. Installing it replaces the patched firmware with Bryton's; declining keeps patched R039.
-          - The builder and build.py refuse anything that is not exactly R039, so nothing breaks — they just stop working until the patches are ported.
+          - The builder and build.py refuse anything that is not exactly R039, so nothing breaks; they just stop working until the patches are ported.
           - If you are still on R039 and want to keep building: run \`tools/fetch_firmware.py --from-readback\` with a readback of your unit (docs/recovery.md), since Bryton's server now serves $v."

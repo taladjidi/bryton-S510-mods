@@ -1,4 +1,4 @@
-// IapSetup.java — one-time setup of the IAP (bootloader) project: create functions at every Cortex-M vector
+// IapSetup.java: one-time setup of the IAP (bootloader) project: create functions at every Cortex-M vector
 // table entry (reset, faults, IRQs) so analysis reaches the boot code. Re-run with analyzeHeadless ... -postScript.
 import ghidra.app.script.GhidraScript;
 import ghidra.program.model.address.Address;

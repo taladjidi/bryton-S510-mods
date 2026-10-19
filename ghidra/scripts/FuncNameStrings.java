@@ -1,4 +1,4 @@
-// FuncNameStrings.java — read-only: propose original function names from __func__ usage.
+// FuncNameStrings.java: read-only: propose original function names from __func__ usage.
 // A function F gets candidate name S when F references an identifier-like string S
 // (C identifier, >= 5 chars) AND F also references a format string containing "%s(" / "%s:" /
 // "[%s]" / "<%s>" (the usual __func__ patterns), AND S is referenced by no other function.

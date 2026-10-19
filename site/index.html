@@ -136,8 +136,8 @@
     <p>Current Chrome, Edge, Firefox and Safari. Writing straight to the drive needs Chrome or Edge; with the
       others, download the 2 files and copy them yourself.</p></details>
 
-  <footer>Open source: <a href="https://github.com/taladjidi/bryton-S510-mods">github.com/taladjidi/bryton-S510-mods</a>
-    — how it works, every check, every test. Bryton's firmware is not hosted here; it is downloaded from Bryton's own
+  <footer>Open source: <a href="https://github.com/taladjidi/bryton-S510-mods">github.com/taladjidi/bryton-S510-mods</a>,
+    with how it works, every check and every test. Bryton's firmware is not hosted here; it is downloaded from Bryton's own
     server by your browser.</footer>
 </main>
 
@@ -193,7 +193,7 @@ async function run(stock) {
       const out = await applyPatches(raw, ids.map((id) => patches[id]));
       log('Packing and re-checking…');
       result = { img: await pack(out), name: ids.join('+') };
-      log(`Ready: ${ids.join(' + ')} — every check passed.`, 'ok');
+      log(`Ready: ${ids.join(' + ')}. Every check passed.`, 'ok');
     }
     $('save').hidden = false;
     $('write').hidden = !('showDirectoryPicker' in window);
@@ -224,7 +224,7 @@ async function writeDrive() {
       const w = await (await dir.getFileHandle(name, { create: true })).createWritable();
       await w.write(data); await w.close();
       const back = new Uint8Array(await (await (await dir.getFileHandle(name)).getFile()).arrayBuffer());
-      if ((await sha256(back)) !== (await sha256(data))) throw new Error(`${name} on the drive does not match — try again.`);
+      if ((await sha256(back)) !== (await sha256(data))) throw new Error(`${name} on the drive does not match; try again.`);
     }
     log('Written and verified on the drive. Now eject it and unplug (step 5).', 'ok');
   } catch (e) {

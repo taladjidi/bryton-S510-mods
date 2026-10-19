@@ -1,4 +1,4 @@
-// CallSeq.java — read-only: for the named functions (args after the outfile), print the ordered
+// CallSeq.java: read-only: for the named functions (args after the outfile), print the ordered
 // sequence of calls (thunks resolved to their target's name) and string literals referenced, in
 // address order. Run on both the original image and a recompiled .o, then diff the outputs.
 // Args: <outfile> <funcName|0xADDR|ALL> ...   (prefix outfile with '+' to append; ALL = every

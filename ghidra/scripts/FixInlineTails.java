@@ -1,7 +1,7 @@
-// FixInlineTails.java — inline-flagged functions (IAR outlined stubs/wrappers) that are not disassembled, or that end
+// FixInlineTails.java: inline-flagged functions (IAR outlined stubs/wrappers) that are not disassembled, or that end
 // in a plain branch out of their body (tail call), break the decompiler when inlined ("Bad partial clone").
 // Disassemble them and mark the outgoing branch CALL_RETURN, which is how Ghidra models a tail call.
-// Args: <report file> [APPLY]   — without APPLY only reports.
+// Args: <report file> [APPLY]: without APPLY only reports.
 import ghidra.app.cmd.disassemble.DisassembleCommand;
 import ghidra.app.script.GhidraScript;
 import ghidra.program.model.address.AddressSet;

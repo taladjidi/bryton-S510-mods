@@ -51,9 +51,9 @@ def verify_vanilla():
         if not os.path.isfile(path):
             if name == 'img.bin':
                 continue                                  # optional: only IMG.raw is patched
-            die(f'{path} missing — run tools/fetch_firmware.py first')
+            die(f'{path} missing; run tools/fetch_firmware.py first')
         if sha(open(path, 'rb').read()) != h:
-            die(f'{path} does not match firmware/SHA256SUMS — these patches are for stock R039 only; stop')
+            die(f'{path} does not match firmware/SHA256SUMS; these patches are for stock R039 only; stop')
 
 
 def h16(b):
@@ -173,7 +173,7 @@ def main(argv):
                 _, a, want, new = e
                 o = a - BASE
                 if 0 <= o <= len(raw) - 4 - len(new) and h16(raw[o:o + len(new)]) != want:
-                    die(f'{fname}: 0x{a:08x} original bytes do not match sha256:{want} — wrong firmware/addr, '
+                    die(f'{fname}: 0x{a:08x} original bytes do not match sha256:{want}; wrong firmware/addr, '
                         f'or already patched?')
                 note = ''
             o = a - BASE

@@ -1,4 +1,4 @@
-// InlineBisect.java — run with -readOnly (changes are discarded): for each failing function, binary-search the set of
+// InlineBisect.java: run with -readOnly (changes are discarded): for each failing function, binary-search the set of
 // ALL inline-flagged functions for a small subset whose un-inlining makes the decompile succeed.
 // Args: <outfile> <file of function addresses>
 import ghidra.app.decompiler.DecompInterface;

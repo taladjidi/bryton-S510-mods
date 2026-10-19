@@ -1,4 +1,4 @@
-// Dump.java — read-only helper: writes decompiler output to a text file.
+// Dump.java: read-only helper: writes decompiler output to a text file.
 // Args: <outfile> then any of
 //   d:0xADDR   decompile the function at ADDR
 //   c:0xADDR   for every caller of ADDR, print caller name + the decompiled lines that call it
@@ -7,7 +7,7 @@
 //   R:0xSTART:0xEND  decompile every function whose entry is in [START,END)
 //   L:0xSTART:0xEND  Ghidra disassembly listing of [START,END)
 //   s:0xADDR   decompile every function referencing ADDR (follows one literal-pool hop)
-//   u:0xADDR   decompile with ALL inline flags cleared (in memory only) — for the ~35 EW __Init that fail with
+//   u:0xADDR   decompile with ALL inline flags cleared (in memory only), for the ~35 EW __Init that fail with
 //              "Bad partial clone": they tail-call by falling through into the next function, whose inlined
 //              outlined-stubs then break jumptable recovery
 // Read-only: no renames, no program changes.

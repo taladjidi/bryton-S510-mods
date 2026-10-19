@@ -1,5 +1,5 @@
-// DeadFuncs.java — read-only: list functions that nothing reaches — no references to the entry (or entry|1), the
-// previous instruction cannot fall through into it, and no 32-bit word anywhere in memory equals entry|1 — as
+// DeadFuncs.java: read-only: list functions that nothing reaches; no references to the entry (or entry|1), the
+// previous instruction cannot fall through into it, and no 32-bit word anywhere in memory equals entry|1, as
 // candidate free space for code patches. Args: <outfile> [minBytes=64]. Verify each candidate by hand.
 import ghidra.app.script.GhidraScript;
 import ghidra.program.model.address.Address;

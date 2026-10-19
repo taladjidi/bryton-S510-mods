@@ -1,4 +1,4 @@
-// GlobalCtx.java — read-only: for the most-used RAM globals (still unnamed DAT_*), print their named users and the
+// GlobalCtx.java: read-only: for the most-used RAM globals (still unnamed DAT_*), print their named users and the
 // decompiled lines that touch them, as evidence for naming. Args: <outfile> [top N] [users decompiled per global]
 import ghidra.app.decompiler.*;
 import ghidra.app.script.GhidraScript;

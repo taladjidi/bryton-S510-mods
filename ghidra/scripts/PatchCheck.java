@@ -1,4 +1,4 @@
-// PatchCheck.java — read-only (run with -readOnly): write patch bytes into memory, disassemble them, print the result,
+// PatchCheck.java: read-only (run with -readOnly): write patch bytes into memory, disassemble them, print the result,
 // so hand-encoded Thumb instructions are checked by Ghidra's own decoder before flashing. Nothing is saved.
 // Args: <outfile> 0xADDR:HEXBYTES [0xADDR:HEXBYTES ...]   (shows every patched instruction + context)
 import ghidra.app.script.GhidraScript;

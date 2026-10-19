@@ -1,4 +1,4 @@
-// InlineCallees.java — read-only: for the functions at the given addresses, count inline-flagged callees.
+// InlineCallees.java: read-only: for the functions at the given addresses, count inline-flagged callees.
 // Args: <outfile> <file with one address per line>
 import ghidra.app.script.GhidraScript;
 import ghidra.program.model.listing.Function;

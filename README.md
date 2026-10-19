@@ -18,7 +18,7 @@ workouts. You build them **in your browser** from Bryton's own firmware, copy tw
 | Fix: that strip always hides when the step changes (even on 15 s intervals) | `P4` |
 | **Tap the big power number** on a power step to switch between instant, 3 s, 10 s and 30 s average power. The box shows `3s` / `10s` / `30s`; the choice is kept across restarts. | `P5` |
 
-All four together are the **workout** set — the default in the web builder. Your settings, rides and workouts
+All four together are the **workout** set, the default in the web builder. Your settings, rides and workouts
 are kept.
 
 > [!WARNING]
@@ -31,11 +31,11 @@ are kept.
    `[OS]`. Battery **≥ 38 %** (below that the unit silently skips updates).
 2. Open the [web builder](https://taladjidi.github.io/bryton-S510-mods/), keep or change the selection, click
    **Build my firmware**. Your browser downloads the official firmware from Bryton's server, checks it, and
-   applies the changes — nothing is uploaded anywhere.
+   applies the changes. Nothing is uploaded anywhere.
 3. Save `IMG.bin` and `update.ini` to the top level of the BRYTON drive (Chrome/Edge can write them directly).
 4. Eject the drive and unplug. The unit restarts, shows an update animation for about a minute, restarts again.
 
-**Back to stock:** same steps with **Back to stock firmware** — that installs Bryton's original file, unchanged.
+**Back to stock:** same steps with **Back to stock firmware**, which installs Bryton's original file, unchanged.
 
 ## Bryton updates
 
@@ -44,12 +44,12 @@ when Bryton publishes a new version. Accepting it installs Bryton's firmware (th
 are adapted to the new version); declining keeps your patched R039. The patches can't be applied to the wrong
 firmware: the builder refuses anything that isn't exactly R039. A
 [scheduled check](.github/workflows/watch-bryton-firmware.yml) opens an issue here when Bryton releases a new
-version — watch the repository to be told.
+version: watch the repository to be told.
 
 ## Is it safe?
 
 - The **bootloader** (the part that starts the firmware) is never modified. It has its own USB recovery mode
-  that can rewrite the stock firmware even when a patched one doesn't start — proven on the test unit.
+  that can rewrite the stock firmware even when a patched one doesn't start (proven on the test unit).
   How: [docs/recovery.md](docs/recovery.md) (needs a Mac or Linux computer with Python).
 - Every build re-checks everything the unit checks before it accepts an update, and patches can only change
   the bytes they declare. See [Checks behind this](#checks-behind-this) and [docs/validation.md](docs/validation.md).
@@ -85,7 +85,7 @@ Every build starts from stock: installing `P1 P5` removes anything else you had.
 | `build.py` / `deploy.py` | Apply patches and build `IMG.bin` + `update.ini` / also copy them to the unit |
 | `tools/iaprecover.py` | Recovery through the bootloader: read back, or rewrite with stock ([docs/recovery.md](docs/recovery.md)) |
 | `tools/ewstr.py` | Decoder/encoder for the firmware's compressed text blocks |
-| `ghidra/` | Ghidra scripts used for the analysis — not needed to use the patches |
+| `ghidra/` | Ghidra scripts used for the analysis, not needed to use the patches |
 
 How the unit updates, boots and stores its UI, and what each patch changes: [docs/how-it-works.md](docs/how-it-works.md).
 
@@ -123,10 +123,10 @@ for the image layout and the string blocks, and `build.py`'s header for the deta
 
 ## Legal
 
-The firmware is Bryton's copyrighted work and is **not** included here — not as a file, and not as fragments
+The firmware is Bryton's copyrighted work and is **not** included here: not as a file, and not as fragments
 inside patches (they carry only new bytes and hashes). This repo contains my own code and documentation of how
 the device works, written for interoperability and to let owners fix things on hardware they own. Bryton names
 are used only to say what this is compatible with. If you represent Bryton and have a concern, please open an
-issue or contact me — I'd much rather talk than have it taken down.
+issue or contact me. I'd much rather talk than have it taken down.
 
 Code: [MIT](LICENSE).

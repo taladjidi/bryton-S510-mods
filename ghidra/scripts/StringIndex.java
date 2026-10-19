@@ -1,4 +1,4 @@
-// StringIndex.java — read-only: string cross-reference index. One TSV row per defined string that some function uses
+// StringIndex.java: read-only: string cross-reference index. One TSV row per defined string that some function uses
 // (directly or through one literal-pool pointer): address, string, users. Strings Ghidra never defined are picked up
 // from literal-pool words that point at >=4 printable bytes + NUL in the image. Args: <out.tsv>
 import ghidra.app.script.GhidraScript;

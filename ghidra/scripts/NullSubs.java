@@ -1,4 +1,4 @@
-// NullSubs.java — read-only: emit "0xADDR nullsub_<addr>" for default-named functions whose body is
+// NullSubs.java: read-only: emit "0xADDR nullsub_<addr>" for default-named functions whose body is
 // a single return (bx lr). IDA-style honest placeholder; removes noise from decompiles.
 import ghidra.app.script.GhidraScript;
 import ghidra.program.model.listing.Function;

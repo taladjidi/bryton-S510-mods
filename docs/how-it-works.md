@@ -39,7 +39,7 @@ the unit decompresses and checks the result, it doesn't compare compressed bytes
 The update routine (`0xd018c264`) runs on **every startup**, from the hardware init at `0xd018a282`, just after
 the filesystem is mounted. In order:
 
-1. If `\update.ini` doesn't exist on the drive: nothing to do. Its content is not used — only its presence.
+1. If `\update.ini` doesn't exist on the drive: nothing to do. Its content is not used, only its presence.
 2. Battery is sampled; **below 38 %** the update is skipped (files stay, so it retries on the next start).
 3. `TimeZone.bin` and `IAP.bin` (bootloader!) are applied if present and their checksums are right.
 4. `\IMG.bin`: must be ≥ 1 MB and pass its additive checksum, is decompressed to `\IMGUnzip.bin` (gzip CRC
@@ -48,7 +48,7 @@ the filesystem is mounted. In order:
    logged**, the update still completes.
 6. `update.ini`, `IMG.bin`, `IMGUnzip.bin` are deleted and the unit restarts.
 
-If USB is connected when the unit starts, it stays in USB-drive mode and restarts when unplugged — so in
+If USB is connected when the unit starts, it stays in USB-drive mode and restarts when unplugged, so in
 practice: copy the files, eject, unplug. This is exactly what the official Bryton Active "update with cable"
 does. Just before the update routine, a cleanup deletes `*.exe` files in the drive's root; nothing else.
 
@@ -57,7 +57,7 @@ does. Just before the update routine, a cleanup deletes `*.exe` files in the dri
 The bootloader (internal flash, never written by these tools) does, at every reset:
 
 1. Clocks, SDRAM init and test, eMMC init.
-2. Copies **6 MB** of the firmware area from eMMC to SDRAM `0xd0000000` — **no checksum, no signature**.
+2. Copies **6 MB** of the firmware area from eMMC to SDRAM `0xd0000000`, with **no checksum, no signature**.
 3. If the **Page** button (PE3, lower right) is held **and** USB power is present: stays in its own USB mode
    (screen: "Engineer Mode") until the cable is removed, then resets.
 4. Otherwise jumps to the image's reset vector.
@@ -74,7 +74,7 @@ A USB mass-storage device (`0483:5720`, bulk endpoints OUT `0x01` / IN `0x81`). 
 
 For those, the LBA field is the 2 KB chunk index (byte offset = LBA × 2048) and the transfer length must be
 4 blocks (2048 B). A failed eMMC write is only printed on the bootloader's debug UART; the USB status still says
-OK — hence `iaprecover.py` reads every written chunk back. Other sub-commands exist (UUID, chip erase, a data
+OK, hence `iaprecover.py` reads every written chunk back. Other sub-commands exist (UUID, chip erase, a data
 partition window); the tools don't use them.
 
 On macOS the system's disk driver owns any USB mass-storage device and Apple offers no way to send it custom
@@ -102,12 +102,12 @@ live in block `0xd0000eec`. Field IDs used in `System/Bike*Profile.ini` (`GridN=
 ## Workout next-step popup
 
 - **Trigger** (`0xd01aaec8`, evaluated on every workout update, about once a second): for **time** steps, while
-  `0 < remaining < 10` s — and it also beeps on every update in that window if the countdown beep is on (so about
+  `0 < remaining < 10` s, and it also beeps on every update in that window if the countdown beep is on (so about
   9 beeps); for **distance** steps, when ≤ 49 (m) remain. The first time, it prepares the next step's details
   and raises a "show preview" flag.
 - **Display**: the data page checks the flag once a second (1000 ms timer). The popup is an Embedded Wizard
   dialog laid out as a full-screen semi-transparent black backdrop (colour `0xd0086d6c`) + a white panel at
-  `0,192–240,320` holding "Next Step N/M", the step kind, the duration and the target range. Each rectangle is a
+  `0,192-240,320` holding "Next Step N/M", the step kind, the duration and the target range. Each rectangle is a
   16-byte constant (`0xd0086d70` … `0xd0086e00`) used only by this dialog, except the green bottom bar.
 - **Hiding**: when the next step starts the flag is cleared (the popup goes within ~1 s), or when the "N/M"
   area is tapped.
@@ -159,7 +159,7 @@ battery**, so after a long time on the cable the unit can show 100 % for a while
 
 Everything the firmware prints (it is chatty: sensor events, workout steps, "Time on Interval...", UI events)
 also goes into a 64 KB ring buffer in RAM that survives a warm reset. At boot, `0xd0189e0a` writes it to
-`\Debug\YYYYMMDDhhmmss.log` on the drive — but only when a reset-cause flag is set (after a fault); a normal
+`\Debug\YYYYMMDDhhmmss.log` on the drive, but only when a reset-cause flag is set (after a fault); a normal
 reboot discards it. Patch `D1` removes that condition so every reboot saves the log: do the thing you want to
 capture, then reboot with the four buttons **without USB connected** (entering USB mode re-initialises the
 buffer and a power-off clears RAM), then plug in and read `Debug/*.log`. The Bryton app can upload files from

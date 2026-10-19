@@ -1,4 +1,4 @@
-// ListExt.java — read-only: list external (unmapped-address) functions with caller counts.
+// ListExt.java: read-only: list external (unmapped-address) functions with caller counts.
 import ghidra.app.script.GhidraScript;
 import ghidra.program.model.listing.Function;
 import java.io.PrintWriter;

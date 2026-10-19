@@ -1,4 +1,4 @@
-// MakeFuncs.java — create Thumb functions at the given addresses (args: 0xADDR ...).
+// MakeFuncs.java: create Thumb functions at the given addresses (args: 0xADDR ...).
 // Used for task entry points reached only via function pointers. Program edit only.
 import ghidra.app.script.GhidraScript;
 import ghidra.program.model.address.Address;

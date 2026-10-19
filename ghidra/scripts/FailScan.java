@@ -1,4 +1,4 @@
-// FailScan.java — read-only: decompile every function whose name matches a regex, list failures + error.
+// FailScan.java: read-only: decompile every function whose name matches a regex, list failures + error.
 // Args: <outfile> <regex>
 import ghidra.app.decompiler.DecompInterface;
 import ghidra.app.script.GhidraScript;

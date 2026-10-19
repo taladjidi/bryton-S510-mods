@@ -70,7 +70,7 @@ export async function applyPatches(raw, patches) {
       const o = e.addr - BASE;
       if (o < 0 || o + e.bytes.length > out.length - 4) throw new Error(`${p.id}: 0x${e.addr.toString(16)} outside the image`);
       if ((await sha256(raw.subarray(o, o + e.bytes.length))).slice(0, 16) !== e.hash)
-        throw new Error(`${p.id}: original bytes at 0x${e.addr.toString(16)} do not match — wrong firmware?`);
+        throw new Error(`${p.id}: original bytes at 0x${e.addr.toString(16)} do not match; wrong firmware?`);
       for (let i = o; i < o + e.bytes.length; i++) {
         if (owner.has(i)) throw new Error(`${p.id}: overlaps ${owner.get(i)}`);
         owner.set(i, p.id);
@@ -99,7 +99,7 @@ export async function pack(raw) {
   const same = back.length === raw.length && back.every((b, i) => b === raw[i]);
   if (!(total % 512 === 0 && total >= 0x100001 && same && addSum(raw, raw.length - 4) === readLe32(raw, raw.length - 4)
         && new TextDecoder().decode(raw.subarray(0x94, 0x98)) === 'R039'))
-    throw new Error('Built package failed its own checks — not saving it.');
+    throw new Error('Built package failed its own checks; not saving it.');
   return img;
 }
 

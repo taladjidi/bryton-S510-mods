@@ -1,6 +1,6 @@
-// RamMap.java — map the STM32H747 RAM regions as uninitialised blocks and make literal-pool words that point into
+// RamMap.java: map the STM32H747 RAM regions as uninitialised blocks and make literal-pool words that point into
 // them constant pointers, so the decompiler shows the global itself (DAT_2406cac0) instead of a pool load.
-// Args: <report> [APPLY]   — run with -readOnly to test in memory.
+// Args: <report> [APPLY]: run with -readOnly to test in memory.
 import ghidra.app.script.GhidraScript;
 import ghidra.program.model.data.*;
 import ghidra.program.model.listing.*;

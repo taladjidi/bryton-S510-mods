@@ -1,4 +1,4 @@
-// GlobalRefs.java — read-only: memory blocks, then rank RAM addresses by how many functions load them from a
+// GlobalRefs.java: read-only: memory blocks, then rank RAM addresses by how many functions load them from a
 // literal pool (ldr rX,[pc,#..] -> 32-bit word whose value points outside the image). Args: <outfile> [top N]
 import ghidra.app.script.GhidraScript;
 import ghidra.program.model.listing.*;

@@ -1,4 +1,4 @@
-// BodyProbe.java — read-only probe: body ranges of a function, and decompile result with all inline callees un-inlined.
+// BodyProbe.java: read-only probe: body ranges of a function, and decompile result with all inline callees un-inlined.
 // Args: <outfile> <addr>
 import ghidra.app.decompiler.DecompInterface;
 import ghidra.app.script.GhidraScript;

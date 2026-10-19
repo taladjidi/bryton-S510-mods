@@ -13,9 +13,9 @@ Needs: a Mac or Linux PC, Python ≥ 3.8, `libusb` (macOS: `brew install libusb`
 The firmware itself has no protection against a bad image: once an image is written, the bootloader runs it
 without any check. What makes experimenting safe is that the **bootloader is never touched** by these patches
 and has its own USB mode that can read and rewrite the firmware area. Proving that path on your own unit
-before the first flash (steps 1–3) takes ten minutes and removes the remaining doubt.
+before the first flash (steps 1-3) takes ten minutes and removes the remaining doubt.
 
-### Step 1 — enter bootloader mode ("Engineer Mode")
+### Step 1: enter bootloader mode ("Engineer Mode")
 
 1. Plug the unit into the computer (it shows the BRYTON drive / charging screen, that's fine).
 2. Press **all four buttons at once** to reboot it.
@@ -23,12 +23,12 @@ before the first flash (steps 1–3) takes ten minutes and removes the remaining
 4. The screen shows **"Engineer Mode"**. macOS now sees a ~272 MB *unformatted* disk instead of the 31 GB BRYTON
    drive (if macOS asks to initialise it: **Ignore**). That is the bootloader's own USB mode.
 
-> A unit that is switched off and then plugged in does *not* go through the bootloader — it only wakes up to
+> A unit that is switched off and then plugged in does *not* go through the bootloader: it only wakes up to
 > show the charging screen. The four-button reboot is what makes the bootloader run with Page held.
 
 Leaving: just unplug. The bootloader restarts the unit normally.
 
-### Step 2 — read back your firmware (read-only, cannot harm the unit)
+### Step 2: read back your firmware (read-only, cannot harm the unit)
 
 ```sh
 sudo python3 tools/iaprecover.py --out build/readback.bin
@@ -38,7 +38,7 @@ It reads the whole firmware area (≈4 MB, under a minute) through the bootloade
 R039. You want: **`MATCHES vanilla IMG.raw`**. This proves (a) your unit runs stock R039 and (b) your Mac can
 talk to the bootloader. `sudo` is needed so libusb can take the device away from macOS's disk driver.
 
-### Step 3 — recovery write test (rewrite stock over stock)
+### Step 3: recovery write test (rewrite stock over stock)
 
 Still in Engineer Mode:
 
@@ -57,7 +57,7 @@ you would run if a patch ever went wrong.
 ### Going back to stock
 
 - **Unit boots:** *Back to stock firmware* in the web builder, or `./deploy.py vanilla` (exactly Bryton's
-  original file), then unplug — same as installing a patch.
+  original file), then unplug, same as installing a patch.
 - **Unit does not boot:** Step 1 (Engineer Mode) + `sudo python3 tools/iaprecover.py --write-vanilla`.
 - Never put an `IAP.bin` (bootloader) on the drive: the update code would flash it into the chip, and a bad
   bootloader is the one thing these tools cannot recover from. `deploy.py` refuses if it finds one.
