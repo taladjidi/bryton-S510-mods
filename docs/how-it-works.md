@@ -129,7 +129,8 @@ strip now disappears within about a second of the step change, whatever the timi
 The big number in the middle of the workout screen is the step target's live value. For power targets it is
 the **instantaneous** power sample. The firmware also keeps rolling **3 s / 10 s / 30 s** averages of the
 per-second power samples (window table `{3, 10, 30}` at `0xd0281178`), shown as data fields 28 / 78 / 27.
-Switching the centre value to one of them is a planned patch (needs a little new code). FIT workout files can
+In progress: tap the centre value to cycle instant / 3 s / 10 s / 30 s, with the choice shown next to the step
+counter and kept across restarts (needs new code; it will live in ~1.5 KB of unused padding at the end of the image). FIT workout files can
 already request `power_3s` / `power_10s` / `power_30s` targets per step, but this firmware rejects those target
 types when importing.
 
