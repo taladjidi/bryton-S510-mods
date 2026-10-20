@@ -105,6 +105,7 @@ Every build starts from stock: installing `P1 P5` removes anything else you had.
 | `tools/fetch_firmware.py` | Downloads stock firmware from Bryton and checks it is exactly R039 (or takes your unit's readback) |
 | `build.py` / `deploy.py` | Apply patches and build `IMG.bin` + `update.ini` / also copy them to the unit |
 | `tools/iaprecover.py` | Recovery through the bootloader: read back, or rewrite with stock ([docs/recovery.md](docs/recovery.md)) |
+| `tools/asm2patch.py` | Assembles a code patch (`patches/*.s`) with clang and prints its `.patch` lines |
 | `tools/ewstr.py` | Decoder/encoder for the firmware's compressed text blocks |
 | `ghidra/` | Ghidra scripts used for the analysis, not needed to use the patches |
 
@@ -138,9 +139,9 @@ string  0xBLOCK  0xINDEX  sha256:<16 hex of the original text>  room=<bytes>  "n
 
 Addresses are load addresses (the image runs at `0xd0000000`). See [docs/how-it-works.md](docs/how-it-works.md)
 for the image layout and the string blocks, and `build.py`'s header for the details. Patches with new code
-(`P5`) keep the assembly next to the `.patch` file; it is assembled with
-`clang --target=thumbv7em-none-eabi -mcpu=cortex-m7 -c`, and every instruction is checked in Ghidra with
-`ghidra/scripts/PatchCheck.java` before flashing.
+(`P5`, `P6`) keep the assembly next to the `.patch` file: `python3 tools/asm2patch.py patches/P6-*.s` assembles
+it with clang and prints the patch lines (the code and the `bl` hooks declared with `@hook`). Every instruction
+is checked in Ghidra with `ghidra/scripts/PatchCheck.java` before flashing.
 
 ## Contributing
 

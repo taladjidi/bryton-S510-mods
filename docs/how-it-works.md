@@ -149,6 +149,21 @@ and for the first N seconds they divide by the full window, so they start low. F
 already request `power_3s` / `power_10s` / `power_30s` targets per step, but this firmware rejects those target
 types when importing.
 
+## Power averages before the ride starts (P6)
+
+The 3 s / 10 s / 30 s power fields (and their %FTP versions) are recomputed once per second by the power
+module's tick (`0xd02809f4`), but stock firmware skips the whole tick unless a ride is **recording**. Recording
+auto-starts after about 9 s at 10 km/h or more; when speed comes from GPS, each of those seconds also needs a 3D
+fix (`0xd01a8d66`). So indoors, or before the GPS has a fix and without a wheel sensor, those fields stay frozen
+while instant power moves: the per-second power samples are queued whatever the record state
+(`0xd0281198`), only the averaging is skipped.
+
+`P6` removes the early exit (`0xd0280a06`) and re-checks the record state right after the averages, by turning
+the following call (`0xd0280a9a`) into a 4-instruction check placed in unused space (`0xd03d6ac0`). TSS, IF, NP,
+W'bal, kJ, max/average power and everything written to the ride file stay behind the original check. The
+averaging function itself only updates NP state while recording (its own check at `0xd0280ea6`), so calling it
+outside a ride has no side effect.
+
 ## Battery percentage
 
 Voltage only: a 100-entry table maps millivolts to percent (3450 mV = 0 %, ≈3790 mV = 50 %, ≥ 4140 mV = 100 %).

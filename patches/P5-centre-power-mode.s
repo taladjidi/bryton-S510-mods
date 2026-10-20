@@ -1,7 +1,10 @@
 @ P5: tap the centre value on a power step to cycle instant / 3 s / 10 s / 30 s power (persisted in RTC backup reg 8).
 @ Code for the zero padding at the end of the OS image (0xd03d69d0..). Assembled with clang, checked with Ghidra
-@ (ghidra/scripts/PatchCheck.java); the hook instructions are in P5-centre-power-mode.patch.
+@ (ghidra/scripts/PatchCheck.java). Patch lines: python3 tools/asm2patch.py patches/P5-centre-power-mode.s
 @ Firmware addresses below are R039. Branch targets are written relative to `cave` so no linker is needed.
+@hook 0xd01ab3fe pick_live  H1 Workout_ReadPowerLive: ldr.w r0,[r8,#0xc] -> bl pick_live
+@hook 0xd0234d8a on_tap     H2 OnTouchRelease tap path: add.w r3,r4,#0x9c -> bl on_tap
+@hook 0xd0234a4a header     H3 LoadIntervalData power case: bl 0xd0234b56 -> bl header
         .syntax unified
         .thumb
         .text
