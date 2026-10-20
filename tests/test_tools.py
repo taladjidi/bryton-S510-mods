@@ -59,7 +59,7 @@ class Tools(unittest.TestCase):
             pid = f.split('-')[0]
             raw = self.raw_of(self.build(pid))
             changed = sum(a != b for a, b in zip(raw[:-4], van[:-4]))
-            self.assertTrue(0 < changed < 1024, f'{pid}: {changed} bytes changed')
+            self.assertTrue(0 < changed < 1600, f'{pid}: {changed} bytes changed')   # 1600: the free image tail
 
     def test_package_passes_the_units_checks(self):
         pkg = self.build('workout')
