@@ -147,7 +147,9 @@ static uint32_t descriptor_add(uint16_t char_handle, const ble_gatts_attr_t *att
 static uint32_t add_char(uint16_t svc, uint16_t uuid16, uint8_t props, const uint8_t *value, uint16_t len,
                          ble_gatts_char_handles_t *h)
 {
-    static const ble_gatts_attr_md_t cccd_md = { ENC, ENC, 1 << 1 };  // notifications: enabled by the phone, encrypted
+    // Notification switch (CCCD): written by the phone over an encrypted link; reading must be open (the SoftDevice
+    // rejects anything else with NRF_ERROR_INVALID_PARAM: flash #9 showed S5007).
+    static const ble_gatts_attr_md_t cccd_md = { OPEN, ENC, 1 << 1 };
     const ble_gatts_attr_md_t value_md = { ENC, (props & PROP_WRITE_NO_RSP) ? ENC : OPEN, 1 << 1 };   // value in the stack
     const ble_uuid_t uuid = { uuid16, 1 };
     const ble_gatts_char_md_t md = { props, 0, 0, 0, 0, 0, 0, (props & PROP_NOTIFY) ? &cccd_md : 0, 0 };
@@ -223,14 +225,14 @@ uint32_t media_remote_press(unsigned bit)
 #define BOX_INDEX(b)      (*(volatile int32_t *)((b) + 0x1620))
 #define BOX_BUTTON(b, i)  (((void **)((b) + 0x60))[i])
 
-// "H<report handle> S<setup error> C<connection> R<last key result>", 4 hex digits each. H0000: no HID service
-// (S = step << 12 | error: which setup call failed); Cffff: no phone; R0008: no phone or no service,
-// R3401: the phone has not subscribed to the key report; Rffff: no key pressed yet.
-static void *status_text(void)
+// Debug, two header lines: "H<report handle> S<setup error>" (first = 0) and "C<connection> R<last key result>"
+// (first = 2), 4 hex digits each. H0000: no HID service (S = step << 12 | error: which setup call failed);
+// Cffff: no phone; R0008: no phone or no service, R3401: the phone has not subscribed; Rffff: no key yet.
+static void *status_text(int first)
 {
     const uint32_t v[4] = { HID_REPORT_HANDLE, HID_SETUP_ERROR, g_ble_conn_handle, HID_LAST_RESULT };
-    char buf[20], *q = buf;
-    for (int i = 0; i < 4; i++) {
+    char buf[12], *q = buf;
+    for (int i = first; i < first + 2; i++) {
         *q++ = "HSCR"[i];
         for (int sh = 12; sh >= 0; sh -= 4)
             *q++ = "0123456789abcdef"[v[i] >> sh & 15];
@@ -257,8 +259,8 @@ void media_refresh(uint8_t *menu)
         CoreGroup_OnSetEnabled(box, 1);
         ViewsImage_OnSetVisible(box + 0x194, 0);
         ViewsImage_OnSetVisible(box + 0x330, 0);
-        ViewsText_OnSetString(box + 0x208, EwNewStringAnsi("Media"));
-        ViewsText_OnSetString(box + 0x29c, status_text());
+        ViewsText_OnSetString(box + 0x208, status_text(0));    // debug lines in place of the "Media" title
+        ViewsText_OnSetString(box + 0x29c, status_text(2));
         // ponytail: captions rebuilt on every refresh (7 small EW strings, garbage collected); a flag if it shows up
         const char *c = captions;
         for (int i = 0; i < 6; i++) {
@@ -287,7 +289,7 @@ void media_or_light(uint8_t *light, int index)
         Light_ApplyModeIndex(light, index);
     else if (index < 5) {
         HID_LAST_RESULT = media_remote_press(keys[index]);
-        ViewsText_OnSetString(light - 0x149c + 0x29c, status_text());
+        ViewsText_OnSetString(light - 0x149c + 0x29c, status_text(2));
     }
 }
 
