@@ -17,8 +17,10 @@ workouts. You build them **in your browser** from Bryton's own firmware, copy tw
 | The full-screen "next step" popup becomes a **small strip over the chart** (next duration + target), without dimming the screen | `P3` |
 | Fix: that strip always hides when the step changes (even on 15 s intervals) | `P4` |
 | **Tap the big power number** on a power step to switch between instant, 3 s, 10 s and 30 s average power. The box shows `3s` / `10s` / `30s`; the choice is kept across restarts. | `P5` |
+| Fix: the 3 s / 10 s / 30 s power fields also move before the ride starts (they stayed frozen until a GPS fix). **Not yet confirmed on a unit.** | `P6` |
+| **Media buttons for your phone** in the overview (the panel a tap on the ride screen opens): previous, play/pause, next, volume down/up, for whatever app is playing. Turn on **Multimedia Control** in Quick Status, then on the phone forget the S510 in the Bluetooth settings and pair it again from the Bryton app (once). Tested with an iPhone. | `P7` |
 
-All four together are the **workout** set, the default in the web builder. Your settings, rides and workouts
+`P1` `P3` `P4` `P5` together are the **workout** set, the default in the web builder; tick `P6` and `P7` to add them. Your settings, rides and workouts
 are kept.
 
 > [!WARNING]
@@ -139,8 +141,9 @@ string  0xBLOCK  0xINDEX  sha256:<16 hex of the original text>  room=<bytes>  "n
 
 Addresses are load addresses (the image runs at `0xd0000000`). See [docs/how-it-works.md](docs/how-it-works.md)
 for the image layout and the string blocks, and `build.py`'s header for the details. Patches with new code
-(`P5`, `P6`) keep the assembly next to the `.patch` file: `python3 tools/asm2patch.py patches/P6-*.s` assembles
-it with clang and prints the patch lines (the code and the `bl` hooks declared with `@hook`). Every instruction
+keep their source next to the `.patch` file, in assembly (`P5`, `P6`) or C (`P7`):
+`python3 tools/asm2patch.py patches/P7-*.c` builds it with clang, links it at the cave address and prints the
+patch lines (the code, the `bl` hooks declared with `@hook` and the `b.w` ones declared with `@jump`). Every instruction
 is checked in Ghidra with `ghidra/scripts/PatchCheck.java` before flashing.
 
 ## Contributing

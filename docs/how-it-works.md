@@ -164,6 +164,31 @@ W'bal, kJ, max/average power and everything written to the ride file stay behind
 averaging function itself only updates NP state while recording (its own check at `0xd0280ea6`), so calling it
 outside a ride has no side effect.
 
+## Media buttons for the phone (P7)
+
+The S510 talks to the phone through a Nordic radio chip that the STM32 drives over UART with Nordic's
+serialization (every `sd_ble_*` call is encoded, sent, and waits for the answer). At start-up
+`Ble_ServicesInit` (`0xd0251372`) registers Bryton's services; `P7` turns its last call into a call to new code
+that registers Bryton's service as before and then a standard **HID over GATT** service (`0x1812`) with one
+consumer-control input report: Play/Pause, Next, Previous, Volume up, Volume down. The phone treats the S510 as
+a media remote, so the keys work in any app. The firmware has no encoder for `sd_ble_gatts_descriptor_add`
+(needed for the Report Reference descriptor), so `P7` builds that request from the firmware's own serialization
+helpers. Two details that matter: the key report's notification switch (CCCD) must be readable without
+encryption, or the radio rejects the characteristic; and like Bryton's own notify, a key press retries while the
+radio's send queue is full, so the key release is never lost. Bryton disabled "Service Changed", so the phone
+only sees the new service after it forgets the S510 and pairs again.
+
+The buttons reuse the overview's **Light Control** widget: a box made for a connected smart light, with a 3 x 2
+grid of pattern buttons, all routed to one tap handler with the button index. When the widget is on and no light
+is connected (the box would stay hidden), `P7` shows it as a "Media" box with `|◀◀ ▶‖ ▶▶|` on the top row and
+`♪− ♪+` centred below; those symbols are composed from glyphs the unit's font has (it has no ⏮ ⏯ ⏭ or speaker).
+Taps then send keys instead of light modes, and the header tap (which opens the light's settings) is ignored.
+With a light connected the widget is Bryton's, unchanged. Quick Status shows the widget as "Multimedia Control"
+(English only: Bryton's "Light Control" text is shared with the light settings page, so it is replaced at the
+one place the Quick Status pages read it). The firmware image only holds code and constants (all writable data
+lives elsewhere in RAM), so the one value `P7` keeps, the key report's handle, is stored in RTC backup register
+20, which Bryton does not use.
+
 ## Battery percentage
 
 Voltage only: a 100-entry table maps millivolts to percent (3450 mV = 0 %, ≈3790 mV = 50 %, ≥ 4140 mV = 100 %).
