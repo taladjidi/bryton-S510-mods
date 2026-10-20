@@ -18,9 +18,19 @@ workouts. You build them **in your browser** from Bryton's own firmware, copy tw
 | Fix: that strip always hides when the step changes (even on 15 s intervals) | `P4` |
 | **Tap the big power number** on a power step to switch between instant, 3 s, 10 s and 30 s average power. The box shows `3s` / `10s` / `30s`; the choice is kept across restarts. | `P5` |
 | Fix: the 3 s / 10 s / 30 s power fields also move before the ride starts (they stayed frozen until a GPS fix). **Not yet confirmed on a unit.** | `P6` |
-| **Media buttons for your phone** in the overview (the panel a tap on the ride screen opens): previous, play/pause, next, volume down/up, for whatever app is playing. Turn on **Multimedia Control** in Quick Status, then on the phone forget the S510 in the Bluetooth settings and pair it again from the Bryton app (once). Tested with an iPhone. | `P7` |
+| **Media buttons for your phone** in the overview (the panel a tap on the ride screen opens): previous, play/pause, next, volume down/up, for whatever app is playing. Turn on **Multimedia Control** in Quick Status. **Re-pair once after installing** (see below). **Only tested with an iPhone so far.** | `P7` |
 
-`P1` `P3` `P4` `P5` together are the **workout** set, the default in the web builder; tick `P6` and `P7` to add them. Your settings, rides and workouts
+`P1` `P3` `P4` `P5` together are the **workout** set, the default in the web builder; tick `P6` and `P7` to add them.
+
+| Quick Status: Multimedia Control | Media box (`P7`) |
+|:---:|:---:|
+| <img src="site/img/multimedia-control.jpg" width="130" alt="Multimedia Control in Quick Status"> | <img src="site/img/media.jpg" width="130" alt="Media box"> |
+
+> [!IMPORTANT]
+> **`P7` needs the phone to be paired again once.** After installing, on the phone open the Bluetooth settings,
+> forget the S510 ("Forget This Device" on an iPhone), then pair it again from the Bryton app. Until then the
+> buttons do nothing (the phone keeps its old list of the S510's services). Only tested with an **iPhone** so
+> far; if you try it on Android, please send a test report. Your settings, rides and workouts
 are kept.
 
 > [!WARNING]

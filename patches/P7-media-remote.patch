@@ -1,5 +1,5 @@
 title:  Media remote: Play/Pause, Next, Prev, Vol +/- for the phone, from the overview (Quick Status "Multimedia Control")
-desc:   Bluetooth HID consumer-control service; Quick Status "Light Control" is renamed "Multimedia Control"; switched on and with no smart light connected, the overview shows a Media box (|◀◀ ▶‖ ▶▶|, ♪− ♪+). Forget and re-pair the phone once after installing.
+desc:   Bluetooth HID consumer-control service; Quick Status "Light Control" is renamed "Multimedia Control"; switched on and with no smart light connected, the overview shows a Media box (|◀◀ ▶‖ ▶▶|, ♪− ♪+). After installing, forget the S510 in the phone's Bluetooth settings and pair it again from the Bryton app (once). Only tested with an iPhone so far.
 source: patches/P7-media-remote.c, docs/how-it-works.md (P7)
 0xd02513fa  sha256:310aa7d978c4b630  85f169fb  # Ble_ServicesInit: bl Ble_LdcSvcInit -> bl ldc_then_hid
 0xd019f83e  sha256:19eee102a30154dc  37f241fa  # TapMenu refresh (0xd019f530): bl TapMenu_UpdateItemLayout -> bl media_refresh

@@ -176,7 +176,8 @@ a media remote, so the keys work in any app. The firmware has no encoder for `sd
 helpers. Two details that matter: the key report's notification switch (CCCD) must be readable without
 encryption, or the radio rejects the characteristic; and like Bryton's own notify, a key press retries while the
 radio's send queue is full, so the key release is never lost. Bryton disabled "Service Changed", so the phone
-only sees the new service after it forgets the S510 and pairs again.
+only sees the new service after it forgets the S510 and pairs again (once, after installing). Tested with an
+iPhone only so far; Android should work the same way (HID over GATT is standard) but is unconfirmed.
 
 The buttons reuse the overview's **Light Control** widget: a box made for a connected smart light, with a 3 x 2
 grid of pattern buttons, all routed to one tap handler with the button index. When the widget is on and no light
