@@ -1,4 +1,4 @@
-title:  Record beat-to-beat heart rate (HRV) in the ride file, for ANT+ and Bluetooth straps [short test OK, longer ride pending]
+title:  Record beat-to-beat heart rate (HRV) in the ride file, for ANT+ and Bluetooth straps [tested on a 97 min ride]
 desc:   RR intervals from the heart rate strap written as standard FIT hrv messages, for HRV / DFA a1 analysis afterwards (Intervals.icu, Runalyze, Kubios); nothing changes on screen
 source: patches/P8-hrv-recording.c, docs/how-it-works.md (P8)
 0xd02898d8  sha256:78e559d33bfdd262  4df192fb  # HRHighANT_Task: bl Ant_Hr_ProcessData -> bl ant_hr_process
