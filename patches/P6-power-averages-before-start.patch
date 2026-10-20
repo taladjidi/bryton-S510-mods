@@ -1,4 +1,4 @@
-title:  3s / 10s / 30s power also move before the ride starts (fix: frozen until GPS fix) [not yet tested on a unit]
+title:  3s / 10s / 30s power also move before the ride starts (fix: frozen until GPS fix)
 desc:   rolling power averages and %FTP computed whatever the record state; TSS/IF/NP/W'bal/recorded data unchanged (BUGS B1)
 source: patches/P6-power-averages-before-start.s, docs/how-it-works.md (P6)
 0xd0280a06  sha256:6b951c5ab93a4bf1  00bf00bf  # RidePower_Tick: bne.w 0xd0280bbe (skip all unless recording) -> nop; nop
