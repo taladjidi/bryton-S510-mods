@@ -24,6 +24,7 @@
 // @hook 0xd019f83e media_refresh  TapMenu refresh (0xd019f530): bl TapMenu_UpdateItemLayout -> bl media_refresh
 // @hook 0xd0269ffc media_or_light  LightControlBox_OnPatternSelected: bl Light_ApplyModeIndex -> bl media_or_light
 // @hook 0xd0269f3c header_guard  LightControlBox_OnOpenSensorLight: ldrb r0,[r1,#1]; cbnz r0 -> bl header_guard
+// @jump 0xd01a4a32 quick_status_label  Quick Status pages, "Light Control" label: b.w EwGetVariantOfString -> b.w quick_status_label
 // Firmware functions (Thumb: odd address where the function is passed as a pointer):
 // @sym Ble_LdcSvcInit 0xd029c3e0
 // @sym sd_ble_gatts_service_add 0xd0289f32
@@ -49,8 +50,8 @@
 // @sym ViewsImage_OnSetVisible 0xd0142fda
 // @sym ViewsText_OnSetString 0xd0144dd0
 // @sym EwNewStringAnsi 0xd0105964
-// @sym PatternSwitch_OnSetSelected 0xd0269888
 // @sym PatternSwitch_OnSetCaption 0xd026989a
+// @sym HAL_Delay 0xd0189678
 #include <stdint.h>
 
 typedef struct { uint16_t uuid; uint8_t type; } ble_uuid_t;                       // type 1 = Bluetooth SIG 16-bit
@@ -93,13 +94,16 @@ extern void CoreView_OnSetEmbedded(void *view, int on);
 extern void ViewsImage_OnSetVisible(void *image, int on);
 extern void ViewsText_OnSetString(void *text, void *str);
 extern void *EwNewStringAnsi(const char *s);
-extern void PatternSwitch_OnSetSelected(void *sw, int on);
 extern void PatternSwitch_OnSetCaption(void *sw, void *str);
+extern void HAL_Delay(uint32_t ms);
 
 // The image area is code and constants only (the IAR init table puts all data at 0xd0600000 / 0x24000000 /
 // 0x30000000), so the one value kept between calls lives in RTC backup register 20, unused by Bryton (OS and
 // bootloader use 1-4, 12, 13, 19; P5 uses 8).
 #define HID_REPORT_HANDLE (*(volatile uint32_t *)0x580040a0)   // RTC 0x58004000 + 0x50 + 4*20; 0 = no service
+// Debug, shown in the Media box header (P7 is not working yet): registers 21 and 22.
+#define HID_SETUP_ERROR   (*(volatile uint32_t *)0x580040a4)   // step << 12 | low 12 bits of the failed call's error
+#define HID_LAST_RESULT   (*(volatile uint32_t *)0x580040a8)   // result of the last key press, 0xffff = none yet
 
 enum { SD_BLE_GATTS_DESCRIPTOR_ADD = 0xA3 };       // Nordic numbering: service_add 0xA0, characteristic_add 0xA2, hvx 0xA6
 enum { ENC = 1 | 2 << 4, OPEN = 1 | 1 << 4 };      // security mode 1 level 2 (encrypted, the phone is bonded) / level 1
@@ -155,17 +159,25 @@ static void hid_service_add(void)
     const ble_uuid_t svc_uuid = { 0x1812, 1 }, ref_uuid = { 0x2908, 1 };
     const ble_gatts_attr_md_t ref_md = { ENC, OPEN, 1 << 1 };
     const ble_gatts_attr_t ref = { &ref_uuid, &ref_md, sizeof report_ref, 0, sizeof report_ref, report_ref };
-    ble_gatts_char_handles_t ignored, report;
-    uint16_t svc;
+    ble_gatts_char_handles_t ignored, report = { 0, 0, 0, 0 };
+    uint16_t svc = 0;
+    uint32_t err, step = 1;
     HID_REPORT_HANDLE = 0;
-    if (sd_ble_gatts_service_add(1, &svc_uuid, &svc) ||
-        add_char(svc, 0x2A4A, PROP_READ, hid_info, sizeof hid_info, &ignored) ||                  // HID Information
-        add_char(svc, 0x2A4B, PROP_READ, report_map, sizeof report_map, &ignored) ||              // Report Map
-        add_char(svc, 0x2A4C, PROP_WRITE_NO_RSP, &zero, 1, &ignored) ||                          // HID Control Point
-        add_char(svc, 0x2A4D, PROP_READ | PROP_NOTIFY, &zero, 1, &report) ||                     // Report (input)
-        descriptor_add(report.value, &ref))                                                        // Report Reference
-        return;                                                                                    // give up quietly
-    HID_REPORT_HANDLE = report.value;
+    HID_LAST_RESULT = 0xffff;
+    err = sd_ble_gatts_service_add(1, &svc_uuid, &svc);
+    if (!err && ++step)
+        err = add_char(svc, 0x2A4A, PROP_READ, hid_info, sizeof hid_info, &ignored);             // HID Information
+    if (!err && ++step)
+        err = add_char(svc, 0x2A4B, PROP_READ, report_map, sizeof report_map, &ignored);         // Report Map
+    if (!err && ++step)
+        err = add_char(svc, 0x2A4C, PROP_WRITE_NO_RSP, &zero, 1, &ignored);                     // HID Control Point
+    if (!err && ++step)
+        err = add_char(svc, 0x2A4D, PROP_READ | PROP_NOTIFY, &zero, 1, &report);                // Report (input)
+    if (!err && ++step)
+        err = descriptor_add(report.value, &ref);                                                  // Report Reference
+    HID_SETUP_ERROR = err ? step << 12 | (err & 0xfff) : 0;
+    if (!err)
+        HID_REPORT_HANDLE = report.value;                                                          // else give up quietly
 }
 
 // Hooked in place of Ble_ServicesInit's call to Ble_LdcSvcInit: same arguments, same result.
@@ -173,6 +185,15 @@ uint32_t ldc_then_hid(void *ldc, void *init)
 {
     uint32_t r = Ble_LdcSvcInit(ldc, init);
     hid_service_add();
+    return r;
+}
+
+// One notification; like Bryton's Ble_LdcSvcSendNotify, wait and retry while the TX queue is full (0x13).
+static uint32_t notify(ble_gatts_hvx_params_t *p)
+{
+    uint32_t r;
+    for (int tries = 0; (r = sd_ble_gatts_hvx(g_ble_conn_handle, p)) == 0x13 && tries < 50; tries++)
+        HAL_Delay(2);
     return r;
 }
 
@@ -185,10 +206,10 @@ uint32_t media_remote_press(unsigned bit)
     ble_gatts_hvx_params_t p = { (uint16_t)HID_REPORT_HANDLE, 1, 0, &n, &down };   // type 1 = notification
     if (p.handle == 0 || g_ble_conn_handle == 0xffff)
         return 8;                                                      // NRF_ERROR_INVALID_STATE
-    uint32_t r = sd_ble_gatts_hvx(g_ble_conn_handle, &p);
+    uint32_t r = notify(&p);
     p.p_data = &up;
     n = 1;
-    return r | sd_ble_gatts_hvx(g_ble_conn_handle, &p);
+    return r ? r : notify(&p);
 }
 
 // --- the buttons: the overview's Light Control widget as a media box ---------------------------------------
@@ -200,7 +221,24 @@ uint32_t media_remote_press(unsigned bit)
 #define BOX_INDEX(b)      (*(volatile int32_t *)((b) + 0x1620))
 #define BOX_BUTTON(b, i)  (((void **)((b) + 0x60))[i])
 
-static const char *const captions[5] = { "Prev", "Play", "Next", "Vol -", "Vol +" };
+// "H<report handle> S<setup error> C<connection> R<last key result>", 4 hex digits each. H0000: no HID service
+// (S = step << 12 | error: which setup call failed); Cffff: no phone; R0008: no phone or no service,
+// R3401: the phone has not subscribed to the key report; Rffff: no key pressed yet.
+static void *status_text(void)
+{
+    const uint32_t v[4] = { HID_REPORT_HANDLE, HID_SETUP_ERROR, g_ble_conn_handle, HID_LAST_RESULT };
+    char buf[20], *q = buf;
+    for (int i = 0; i < 4; i++) {
+        *q++ = "HSCR"[i];
+        for (int sh = 12; sh >= 0; sh -= 4)
+            *q++ = "0123456789abcdef"[v[i] >> sh & 15];
+        *q++ = ' ';
+    }
+    q[-1] = 0;
+    return EwNewStringAnsi(buf);
+}
+
+static const char captions[] = "Prev\0Play\0Next\0Vol -\0Vol +";  // button order, packed (cave space)
 static const uint8_t keys[5] = { 2, 0, 1, 4, 3 };                    // media_remote_press bits, button order
 
 // Runs where the refresh called TapMenu_UpdateItemLayout: Bryton has just shown or hidden the box (shown only
@@ -215,16 +253,19 @@ void media_refresh(uint8_t *menu)
         CoreGroup_OnSetEnabled(box, 1);
         ViewsImage_OnSetVisible(box + 0x194, 0);
         ViewsImage_OnSetVisible(box + 0x330, 0);
-        ViewsText_OnSetString(box + 0x208, EwNewStringAnsi(""));
-        ViewsText_OnSetString(box + 0x29c, EwNewStringAnsi("Media"));
+        ViewsText_OnSetString(box + 0x208, EwNewStringAnsi("Media"));
+        ViewsText_OnSetString(box + 0x29c, status_text());
         // ponytail: captions rebuilt on every refresh (7 small EW strings, garbage collected); a flag if it shows up
+        const char *c = captions;
         for (int i = 0; i < 6; i++) {
-            void *sw = BOX_BUTTON(box, i);
-            PatternSwitch_OnSetSelected(sw, 0);
+            void *sw = BOX_BUTTON(box, i);                    // never selected in media mode: no OnSetSelected
             CoreGroup_OnSetEnabled(sw, i < 5);
             CoreGroup_OnSetVisible(sw, i < 5);
-            if (i < 5)
-                PatternSwitch_OnSetCaption(sw, EwNewStringAnsi(captions[i]));
+            if (i < 5) {
+                PatternSwitch_OnSetCaption(sw, EwNewStringAnsi(c));
+                while (*c++)
+                    ;
+            }
         }
     } else {
         ViewsImage_OnSetVisible(box + 0x194, 1);                      // light (or hidden): Bryton's header back;
@@ -238,8 +279,17 @@ void media_or_light(uint8_t *light, int index)
 {
     if (BOX_INDEX(light - 0x149c) >= 0)
         Light_ApplyModeIndex(light, index);
-    else if (index < 5)
-        media_remote_press(keys[index]);
+    else if (index < 5) {
+        HID_LAST_RESULT = media_remote_press(keys[index]);
+        ViewsText_OnSetString(light - 0x149c + 0x29c, status_text());
+    }
+}
+
+// The Quick Status pages' label for the widget: "Multimedia Control" instead of "Light Control" (English only;
+// Bryton's string is shared with the light settings page, so it is not edited).
+void *quick_status_label(void)
+{
+    return EwNewStringAnsi("Multimedia Control");
 }
 
 // The box header was tapped: Bryton opens the light's settings page for light BOX_INDEX, which is -1 in media

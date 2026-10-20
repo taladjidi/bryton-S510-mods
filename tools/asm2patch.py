@@ -8,6 +8,7 @@ The source declares, in comments ('@' in assembly, '//' in C):
   @cave 0xd03d69d0                        load address of the new code (unused space in the image)
   @sym  Ride_UpdateTss 0xd0281854         a firmware function or variable the code refers to by name
   @hook 0xd01ab3fe pick_live  comment     replace the 4-byte instruction at 0xd01ab3fe by "bl pick_live"
+  @jump 0xd01a4a32 label  comment         same with "b.w label" (to replace a tail call)
 (assembly may also use ".equ CAVE, 0x..." and firmware targets written relative to a start label, as P5 does).
 The object is linked here: sections are placed one after the other from the cave address and the few
 relocation types clang emits are resolved (absolute words, bl, b.w). Anything else is an error.
@@ -19,7 +20,7 @@ import hashlib, os, re, struct, subprocess, sys, tempfile
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
 BASE = 0xd0000000
 CLANG = ['clang', '--target=thumbv7em-none-eabihf', '-mcpu=cortex-m7', '-mfloat-abi=hard', '-mfpu=fpv5-d16']
-CFLAGS = ['-Os', '-ffreestanding', '-fno-builtin', '-fno-pic', '-mno-movt', '-fno-unwind-tables',
+CFLAGS = ['-Oz', '-ffreestanding', '-fno-builtin', '-fno-pic', '-mno-movt', '-fno-unwind-tables',
           '-fno-asynchronous-unwind-tables', '-fno-exceptions', '-fno-function-sections', '-fno-data-sections',
           '-std=c11', '-Wall', '-Wextra', '-Werror']
 R_ARM_ABS32, R_ARM_THM_CALL, R_ARM_THM_JUMP24 = 2, 10, 30
@@ -103,7 +104,7 @@ def main(src, show_syms=False):
     cave = tag('cave') or re.findall(r'^\s*\.equ\s+CAVE\s*,\s*(0x[0-9a-fA-F]+)', text, re.M)
     cave = int(cave[0].split()[0], 16)
     fw_syms = {f[0]: int(f[1], 16) for f in (l.split() for l in tag('sym'))}
-    hooks = [l.split(None, 2) for l in tag('hook')]
+    hooks = [[True] + l.split(None, 2) for l in tag('hook')] + [[False] + l.split(None, 2) for l in tag('jump')]
     with tempfile.TemporaryDirectory() as d:
         obj = os.path.join(d, 'patch.o')
         extra = CFLAGS if src.endswith('.c') else []
@@ -113,10 +114,10 @@ def main(src, show_syms=False):
     h = lambda a, n: hashlib.sha256(raw[a - BASE:a - BASE + n]).hexdigest()[:16]
     if any(raw[cave - BASE:cave - BASE + len(code)]):
         sys.exit(f'asm2patch: 0x{cave:08x}..+{len(code)} is not zero padding in stock R039')
-    for addr, label, *comment in hooks:
+    for is_bl, addr, label, *comment in hooks:
         a = int(addr, 16)
-        print(f'0x{a:08x}  sha256:{h(a, 4)}  {branch(a, addr_of[label] & ~1, True).hex()}  # '
-              f'{comment[0] if comment else "bl " + label}')
+        print(f'0x{a:08x}  sha256:{h(a, 4)}  {branch(a, addr_of[label] & ~1, is_bl).hex()}  # '
+              f'{comment[0] if comment else ("bl " if is_bl else "b.w ") + label}')
     if show_syms:
         for name, a in sorted(addr_of.items(), key=lambda x: x[1]):
             if cave <= a < cave + len(code):
