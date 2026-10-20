@@ -1,10 +1,10 @@
-// P7 (DRAFT, not tested on the unit): the S510 becomes a Bluetooth media remote for the paired phone.
+// P7: the S510 becomes a Bluetooth media remote for the paired phone.
 //
 // Adds a standard HID-over-GATT service (Bluetooth SIG "HID", 0x1812) with one consumer-control report:
 // Play/Pause, Next, Previous, Volume up, Volume down. The phone's OS handles the keys (whatever app is playing),
 // so nothing is needed on the phone.
-// Buttons: the overview's "Light Control" widget. With the widget switched on in Quick Status and no smart light
-// connected, its first light box is shown as a "Media" box: |◀◀  ▶‖  ▶▶| on the top row, ♪− ♪+ below.
+// Buttons: the overview's Light Control widget, renamed "Multimedia Control" in Quick Status. Switched on, with no smart light
+// connected, its first light box is shown as a "Media" box: |◀◀  ▶‖  ▶▶| on the top row, ♪− ♪+ centred below.
 // With a light connected the widget is Bryton's, unchanged.
 //
 // How it fits in the firmware: the STM32 drives the Nordic radio through Nordic's serialization (each
@@ -53,6 +53,7 @@
 // @sym EwNewStringUtf8 0xd0105974
 // @sym PatternSwitch_OnSetCaption 0xd026989a
 // @sym HAL_Delay 0xd0189678
+// @sym CoreRectView__OnSetBounds 0xd013990a
 #include <stdint.h>
 
 typedef struct { uint16_t uuid; uint8_t type; } ble_uuid_t;                       // type 1 = Bluetooth SIG 16-bit
@@ -98,14 +99,12 @@ extern void *EwNewStringAnsi(const char *s);
 extern void *EwNewStringUtf8(const char *s, int bytes);
 extern void PatternSwitch_OnSetCaption(void *sw, void *str);
 extern void HAL_Delay(uint32_t ms);
+extern void CoreRectView__OnSetBounds(void *view, int x1, int y1, int x2, int y2);   // rect by value
 
 // The image area is code and constants only (the IAR init table puts all data at 0xd0600000 / 0x24000000 /
 // 0x30000000), so the one value kept between calls lives in RTC backup register 20, unused by Bryton (OS and
 // bootloader use 1-4, 12, 13, 19; P5 uses 8).
 #define HID_REPORT_HANDLE (*(volatile uint32_t *)0x580040a0)   // RTC 0x58004000 + 0x50 + 4*20; 0 = no service
-// Debug, shown in the Media box header (P7 is not working yet): registers 21 and 22.
-#define HID_SETUP_ERROR   (*(volatile uint32_t *)0x580040a4)   // step << 12 | low 12 bits of the failed call's error
-#define HID_LAST_RESULT   (*(volatile uint32_t *)0x580040a8)   // result of the last key press, 0xffff = none yet
 
 enum { SD_BLE_GATTS_DESCRIPTOR_ADD = 0xA3 };       // Nordic numbering: service_add 0xA0, characteristic_add 0xA2, hvx 0xA6
 enum { ENC = 1 | 2 << 4, OPEN = 1 | 1 << 4 };      // security mode 1 level 2 (encrypted, the phone is bonded) / level 1
@@ -165,23 +164,15 @@ static void hid_service_add(void)
     const ble_gatts_attr_t ref = { &ref_uuid, &ref_md, sizeof report_ref, 0, sizeof report_ref, report_ref };
     ble_gatts_char_handles_t ignored, report = { 0, 0, 0, 0 };
     uint16_t svc = 0;
-    uint32_t err, step = 1;
     HID_REPORT_HANDLE = 0;
-    HID_LAST_RESULT = 0xffff;
-    err = sd_ble_gatts_service_add(1, &svc_uuid, &svc);
-    if (!err && ++step)
-        err = add_char(svc, 0x2A4A, PROP_READ, hid_info, sizeof hid_info, &ignored);             // HID Information
-    if (!err && ++step)
-        err = add_char(svc, 0x2A4B, PROP_READ, report_map, sizeof report_map, &ignored);         // Report Map
-    if (!err && ++step)
-        err = add_char(svc, 0x2A4C, PROP_WRITE_NO_RSP, &zero, 1, &ignored);                     // HID Control Point
-    if (!err && ++step)
-        err = add_char(svc, 0x2A4D, PROP_READ | PROP_NOTIFY, &zero, 1, &report);                // Report (input)
-    if (!err && ++step)
-        err = descriptor_add(report.value, &ref);                                                  // Report Reference
-    HID_SETUP_ERROR = err ? step << 12 | (err & 0xfff) : 0;
-    if (!err)
-        HID_REPORT_HANDLE = report.value;                                                          // else give up quietly
+    if (sd_ble_gatts_service_add(1, &svc_uuid, &svc) ||
+        add_char(svc, 0x2A4A, PROP_READ, hid_info, sizeof hid_info, &ignored) ||                  // HID Information
+        add_char(svc, 0x2A4B, PROP_READ, report_map, sizeof report_map, &ignored) ||              // Report Map
+        add_char(svc, 0x2A4C, PROP_WRITE_NO_RSP, &zero, 1, &ignored) ||                          // HID Control Point
+        add_char(svc, 0x2A4D, PROP_READ | PROP_NOTIFY, &zero, 1, &report) ||                     // Report (input)
+        descriptor_add(report.value, &ref))                                                        // Report Reference
+        return;                                                                                    // give up quietly
+    HID_REPORT_HANDLE = report.value;
 }
 
 // Hooked in place of Ble_ServicesInit's call to Ble_LdcSvcInit: same arguments, same result.
@@ -225,23 +216,6 @@ uint32_t media_remote_press(unsigned bit)
 #define BOX_INDEX(b)      (*(volatile int32_t *)((b) + 0x1620))
 #define BOX_BUTTON(b, i)  (((void **)((b) + 0x60))[i])
 
-// Debug, two header lines: "H<report handle> S<setup error>" (first = 0) and "C<connection> R<last key result>"
-// (first = 2), 4 hex digits each. H0000: no HID service (S = step << 12 | error: which setup call failed);
-// Cffff: no phone; R0008: no phone or no service, R3401: the phone has not subscribed; Rffff: no key yet.
-static void *status_text(int first)
-{
-    const uint32_t v[4] = { HID_REPORT_HANDLE, HID_SETUP_ERROR, g_ble_conn_handle, HID_LAST_RESULT };
-    char buf[12], *q = buf;
-    for (int i = first; i < first + 2; i++) {
-        *q++ = "HSCR"[i];
-        for (int sh = 12; sh >= 0; sh -= 4)
-            *q++ = "0123456789abcdef"[v[i] >> sh & 15];
-        *q++ = ' ';
-    }
-    q[-1] = 0;
-    return EwNewStringAnsi(buf);
-}
-
 // Button order, packed (cave space). UTF-8; the unit's font (BrytonRiderFont, DeviceLangs.bin) has ◀ ▶ ‖ ♪ −
 // but no ⏮ ⏯ ⏭ or speaker, so the usual symbols are composed from those.
 static const char captions[] = "|◀◀\0▶‖\0▶▶|\0♪−\0♪+";
@@ -259,8 +233,10 @@ void media_refresh(uint8_t *menu)
         CoreGroup_OnSetEnabled(box, 1);
         ViewsImage_OnSetVisible(box + 0x194, 0);
         ViewsImage_OnSetVisible(box + 0x330, 0);
-        ViewsText_OnSetString(box + 0x208, status_text(0));    // debug lines in place of the "Media" title
-        ViewsText_OnSetString(box + 0x29c, status_text(2));
+        ViewsText_OnSetString(box + 0x208, EwNewStringAnsi(""));
+        ViewsText_OnSetString(box + 0x29c, EwNewStringAnsi("Media"));
+        CoreRectView__OnSetBounds(BOX_BUTTON(box, 3), 45, 103, 118, 149);   // bottom row centred under the top
+        CoreRectView__OnSetBounds(BOX_BUTTON(box, 4), 123, 103, 196, 149);  // row (Bryton: x 6 and 84)
         // ponytail: captions rebuilt on every refresh (7 small EW strings, garbage collected); a flag if it shows up
         const char *c = captions;
         for (int i = 0; i < 6; i++) {
@@ -278,6 +254,8 @@ void media_refresh(uint8_t *menu)
     } else {
         ViewsImage_OnSetVisible(box + 0x194, 1);                      // light (or hidden): Bryton's header back;
         ViewsImage_OnSetVisible(box + 0x330, 1);                      // the light refresh has redone the rest
+        CoreRectView__OnSetBounds(BOX_BUTTON(box, 3), 6, 103, 79, 149);
+        CoreRectView__OnSetBounds(BOX_BUTTON(box, 4), 84, 103, 157, 149);
     }
     TapMenu_UpdateItemLayout(menu);
 }
@@ -287,10 +265,8 @@ void media_or_light(uint8_t *light, int index)
 {
     if (BOX_INDEX(light - 0x149c) >= 0)
         Light_ApplyModeIndex(light, index);
-    else if (index < 5) {
-        HID_LAST_RESULT = media_remote_press(keys[index]);
-        ViewsText_OnSetString(light - 0x149c + 0x29c, status_text(2));
-    }
+    else if (index < 5)
+        media_remote_press(keys[index]);
 }
 
 // The Quick Status pages' label for the widget: "Multimedia Control" instead of "Light Control" (English only;
