@@ -43,6 +43,12 @@ jobs:
           if [ -d site/img ]; then cp -r site/img _site/; fi
           cp patches/*.patch _site/patches/
           (cd patches && ls *.patch) | python3 -c "import json,sys; print(json.dumps(sys.stdin.read().split()))" > _site/patches/index.json
+          # Stamp this deploy's commit on the files the page loads, so a browser never mixes a cached builder.js or
+          # patch list from an older deploy with this page (Pages lets browsers cache them for 10 min).
+          V="${GITHUB_SHA::12}"
+          sed -i -e "s|'./builder.js'|'./builder.js?v=$V'|" -e "s|'patches/index.json'|'patches/index.json?v=$V'|" \
+                 -e "s|'patches/' + f)|'patches/' + f + '?v=$V')|" _site/index.html
+          test "$(grep -c "?v=$V" _site/index.html)" = 3
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with: { path: _site }
