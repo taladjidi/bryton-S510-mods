@@ -112,6 +112,18 @@ class Tools(unittest.TestCase):
         self.assertEqual(sha(open(os.path.join(self.tmp, 'fw', 'IMG.raw'), 'rb').read()),
                          open(build.SUMS).read().split()[2])
 
+    def test_code_patches_match_their_source(self):
+        if not shutil.which('clang'):
+            self.skipTest('clang not installed')
+        for f in sorted(os.listdir(build.PATCHES)):
+            if not f.endswith(('.s', '.c')):
+                continue
+            out = subprocess.run([sys.executable, os.path.join(ROOT, 'tools', 'asm2patch.py'), os.path.join(build.PATCHES, f)],
+                                 capture_output=True, text=True, check=True).stdout
+            patch = open(os.path.join(build.PATCHES, os.path.splitext(f)[0] + '.patch')).read()
+            for line in out.splitlines():
+                self.assertIn(' '.join(line.split()[:3]), ' '.join(patch.split()), f'{f}: {line[:60]}')
+
     def test_web_builder_agrees(self):
         if not shutil.which('node'):
             self.skipTest('node not installed')

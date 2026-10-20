@@ -15,6 +15,8 @@ public class PatchCheck extends GhidraScript {
                 for (int k = 0; k < b.length; k++) b[k] = (byte) Integer.parseInt(p[1].substring(2 * k, 2 * k + 2), 16);
                 clearListing(at, at.add(b.length + 15));
                 setBytes(at, b);
+                var tmode = currentProgram.getProgramContext().getRegister("TMode");   // all S510 code is Thumb
+                currentProgram.getProgramContext().setValue(tmode, at, at.add(b.length - 1), java.math.BigInteger.ONE);
                 disassemble(at);
                 out.println("### " + a[i]);
                 Address cur = at;
