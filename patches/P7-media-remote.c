@@ -4,7 +4,7 @@
 // Play/Pause, Next, Previous, Volume up, Volume down. The phone's OS handles the keys (whatever app is playing),
 // so nothing is needed on the phone.
 // Buttons: the overview's "Light Control" widget. With the widget switched on in Quick Status and no smart light
-// connected, its first light box is shown as a "Media" box: Prev / Play / Next on the top row, Vol - / Vol + below.
+// connected, its first light box is shown as a "Media" box: |◀◀  ▶‖  ▶▶| on the top row, ♪− ♪+ below.
 // With a light connected the widget is Bryton's, unchanged.
 //
 // How it fits in the firmware: the STM32 drives the Nordic radio through Nordic's serialization (each
@@ -50,6 +50,7 @@
 // @sym ViewsImage_OnSetVisible 0xd0142fda
 // @sym ViewsText_OnSetString 0xd0144dd0
 // @sym EwNewStringAnsi 0xd0105964
+// @sym EwNewStringUtf8 0xd0105974
 // @sym PatternSwitch_OnSetCaption 0xd026989a
 // @sym HAL_Delay 0xd0189678
 #include <stdint.h>
@@ -94,6 +95,7 @@ extern void CoreView_OnSetEmbedded(void *view, int on);
 extern void ViewsImage_OnSetVisible(void *image, int on);
 extern void ViewsText_OnSetString(void *text, void *str);
 extern void *EwNewStringAnsi(const char *s);
+extern void *EwNewStringUtf8(const char *s, int bytes);
 extern void PatternSwitch_OnSetCaption(void *sw, void *str);
 extern void HAL_Delay(uint32_t ms);
 
@@ -238,7 +240,9 @@ static void *status_text(void)
     return EwNewStringAnsi(buf);
 }
 
-static const char captions[] = "Prev\0Play\0Next\0Vol -\0Vol +";  // button order, packed (cave space)
+// Button order, packed (cave space). UTF-8; the unit's font (BrytonRiderFont, DeviceLangs.bin) has ◀ ▶ ‖ ♪ −
+// but no ⏮ ⏯ ⏭ or speaker, so the usual symbols are composed from those.
+static const char captions[] = "|◀◀\0▶‖\0▶▶|\0♪−\0♪+";
 static const uint8_t keys[5] = { 2, 0, 1, 4, 3 };                    // media_remote_press bits, button order
 
 // Runs where the refresh called TapMenu_UpdateItemLayout: Bryton has just shown or hidden the box (shown only
@@ -262,9 +266,11 @@ void media_refresh(uint8_t *menu)
             CoreGroup_OnSetEnabled(sw, i < 5);
             CoreGroup_OnSetVisible(sw, i < 5);
             if (i < 5) {
-                PatternSwitch_OnSetCaption(sw, EwNewStringAnsi(c));
-                while (*c++)
-                    ;
+                const char *e = c;
+                while (*e)
+                    e++;
+                PatternSwitch_OnSetCaption(sw, EwNewStringUtf8(c, (int)(e - c)));
+                c = e + 1;
             }
         }
     } else {
