@@ -11,8 +11,9 @@ ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
 sys.path[:0] = [ROOT, os.path.join(ROOT, 'tools')]
 import build, deploy, fetch_firmware  # noqa: E402
 
-# The image running on the test unit (FLASHLOG #6/#7): if this changes, the "workout" set is no longer what was tested.
-WORKOUT_RAW_SHA = 'd8a2565e4572acfb5b20403878bbba8bc4b9969259d577aa08b04f251ad139a0'
+# The "workout" set = P1 P3 P4 P5 P7: the image of FLASHLOG #11 (P1 P3 P4 P5 P6 P7, OK on the test unit) without P6,
+# whose bytes no other patch touches. If this changes, the default set is no longer what was tested.
+WORKOUT_RAW_SHA = 'f9eee6e328a2c1bb5757483560d415dfaf4b6217986d45e1853f6151946115e8'
 STOCK_IMG = os.path.join(build.VAN, 'img.bin')
 
 

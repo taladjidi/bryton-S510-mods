@@ -5,7 +5,7 @@
 export const FIRMWARE_URL = 'https://corp.brytonsport.com/device/riders510/img.bin';
 export const SHA_IMG = '90db299247f4f201d8feb5230d14ab35a00bccd6d80f6602807e9ef1a94eb786';   // firmware/SHA256SUMS
 export const SHA_RAW = 'c7f5e7140ac6ca1010e58407b627fa6e4483e714857690409675725ae9043a4e';
-export const PRESETS = { workout: ['P1', 'P3', 'P4', 'P5'] };                                      // = build.py PRESETS
+export const PRESETS = { workout: ['P1', 'P3', 'P4', 'P5', 'P7'] };                                      // = build.py PRESETS
 const MEMBER_LEN = 2634848;                  // gzip member inside stock img.bin (then zero pad + 4-byte sum)
 const RAW_LEN = 4026368;
 const BASE = 0xd0000000;

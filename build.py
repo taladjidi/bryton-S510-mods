@@ -29,7 +29,7 @@ VAN, PATCHES, OUT = os.path.join(ROOT, 'firmware', 'R039'), os.path.join(ROOT, '
 SUMS = os.path.join(ROOT, 'firmware', 'SHA256SUMS')
 BASE = 0xd0000000
 GZ_HDR = b'\x1f\x8b\x08\x08\xc4\x38\xb2\x6a\x00\x0bIMG.bin\x00'   # vanilla header (FNAME, same mtime/OS)
-PRESETS = {'workout': ['P1', 'P3', 'P4', 'P5']}     # also offered by the web builder (site/)
+PRESETS = {'workout': ['P1', 'P3', 'P4', 'P5', 'P7']}     # also offered by the web builder (site/)
 
 
 def die(msg):

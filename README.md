@@ -25,7 +25,7 @@ Bryton's own firmware, copy two files to the unit, done.
 | Fix: the 3 s / 10 s / 30 s power fields also move before the ride starts (they stayed frozen until a GPS fix). **Not yet confirmed on a unit.** | `P6` |
 | **Media buttons for your phone** in the overview (the panel a tap on the ride screen opens): previous, play/pause, next, volume down/up, for whatever app is playing. Turn on **Multimedia Control** in Quick Status. **Re-pair once after installing** (see below). **Only tested with an iPhone so far.** | `P7` |
 
-`P1` `P3` `P4` `P5` together are the **workout** set, the default in the web builder; tick `P6` and `P7` to add them.
+`P1` `P3` `P4` `P5` `P7` together are the **workout** set, the default in the web builder; tick `P6` to add it.
 
 > [!IMPORTANT]
 > **`P7` needs the phone to be paired again once.** After installing, on the phone open the Bluetooth settings,
