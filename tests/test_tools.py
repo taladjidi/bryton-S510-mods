@@ -120,6 +120,9 @@ class Tools(unittest.TestCase):
                 continue
             out = subprocess.run([sys.executable, os.path.join(ROOT, 'tools', 'asm2patch.py'), os.path.join(build.PATCHES, f)],
                                  capture_output=True, text=True, check=True).stdout
+            if f.endswith('.c'):
+                continue    # ponytail: C code depends on the clang version (CI's differs from the Mac's that built the
+                            # bytes tested on the unit): only "builds and fits"; pin clang in CI to compare bytes too
             patch = open(os.path.join(build.PATCHES, os.path.splitext(f)[0] + '.patch')).read()
             for line in out.splitlines():
                 self.assertIn(' '.join(line.split()[:3]), ' '.join(patch.split()), f'{f}: {line[:60]}')
