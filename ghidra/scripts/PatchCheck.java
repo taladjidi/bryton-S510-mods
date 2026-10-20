@@ -22,6 +22,13 @@ public class PatchCheck extends GhidraScript {
                 Address at = toAddr(p[0]);
                 byte[] b = new byte[p[1].length() / 2];
                 for (int k = 0; k < b.length; k++) b[k] = (byte) Integer.parseInt(p[1].substring(2 * k, 2 * k + 2), 16);
+                var mem = currentProgram.getMemory();
+                var blk = mem.getBlock(at);
+                if (blk != null && !blk.isInitialized()) {        // code placed after the image (build.py GROW_END):
+                    if (!blk.getStart().equals(at)) { mem.split(blk, at); blk = mem.getBlock(at); }   // in memory
+                    if (blk.getEnd().compareTo(at.add(0x1000)) > 0) mem.split(blk, at.add(0x1000));   // only
+                    mem.convertToInitialized(mem.getBlock(at), (byte) 0);
+                }
                 clearListing(at, at.add(b.length + 15));
                 setBytes(at, b);
                 var tmode = currentProgram.getProgramContext().getRegister("TMode");   // all S510 code is Thumb

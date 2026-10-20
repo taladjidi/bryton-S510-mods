@@ -117,6 +117,8 @@
   <div class="card" id="patches-phone"><p>Loading the list…</p></div>
   <h3>Workout screen</h3>
   <div class="card" id="patches-workout"></div>
+  <h3>Ride recording</h3>
+  <div class="card" id="patches-ride"></div>
   <details id="devbox" hidden><summary>Developer and test patches</summary><div class="card" id="devpatches"></div></details>
 
   <h2><span class="n">3</span> Build</h2>
@@ -195,7 +197,7 @@ async function loadPatches() {
     el.querySelector('input').disabled = !!p.unsupported;
     el.querySelector('span').textContent = p.title || id;
     el.querySelector('small').textContent = `${id} · ${p.unsupported ? p.unsupported : p.desc}`;
-    $(dev ? 'devpatches' : id === 'P7' ? 'patches-phone' : 'patches-workout').append(el);   // ponytail: one phone patch
+    $(dev ? 'devpatches' : { P7: 'patches-phone', P8: 'patches-ride' }[id] || 'patches-workout').append(el);
     if (dev) $('devbox').hidden = false;
   }
 }

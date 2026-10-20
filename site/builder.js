@@ -9,6 +9,7 @@ export const PRESETS = { recommended: ['P1', 'P3', 'P5', 'P7'] };               
 const MEMBER_LEN = 2634848;                  // gzip member inside stock img.bin (then zero pad + 4-byte sum)
 const RAW_LEN = 4026368;
 const BASE = 0xd0000000;
+const GROW_END = 0xd0600000;                 // = build.py GROW_END: new code may follow the stock image up to here
 const GZ_HDR = [0x1f, 0x8b, 8, 8, 0xc4, 0x38, 0xb2, 0x6a, 0, 0x0b, ...new TextEncoder().encode('IMG.bin'), 0];
 
 const hex = (buf) => [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
@@ -63,6 +64,15 @@ export function parsePatch(id, text) {
 
 /** Apply patches to a copy of raw, with the same refusals as build.py. */
 export async function applyPatches(raw, patches) {
+  let need = raw.length;                     // patches past the stock end grow the image (zeros, trailer moves)
+  for (const p of patches) for (const e of p.edits) {
+    const o = e.addr - BASE;
+    if (o >= raw.length) need = Math.max(need, Math.ceil((o + e.bytes.length + 4) / 16) * 16);
+  }
+  if (BASE + need > GROW_END) throw new Error('a patch reaches past the space the firmware leaves free');
+  const base = new Uint8Array(need);
+  base.set(raw);
+  raw = base;
   const out = raw.slice(), owner = new Map();
   for (const p of patches) {
     if (p.unsupported) throw new Error(`${p.id}: ${p.unsupported}`);

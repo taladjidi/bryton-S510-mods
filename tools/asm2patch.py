@@ -9,6 +9,9 @@ The source declares, in comments ('@' in assembly, '//' in C):
   @sym  Ride_UpdateTss 0xd0281854         a firmware function or variable the code refers to by name
   @hook 0xd01ab3fe pick_live  comment     replace the 4-byte instruction at 0xd01ab3fe by "bl pick_live"
   @jump 0xd01a4a32 label  comment         same with "b.w label" (to replace a tail call)
+  @word 0xd029e634 label  comment         replace the 4-byte word at 0xd029e634 by label's address (Thumb bit set
+                                          for a function): a function pointer in a literal pool
+The cave may lie after the stock image (build.py grows it, see GROW_END there); that space counts as zeros.
 (assembly may also use ".equ CAVE, 0x..." and firmware targets written relative to a start label, as P5 does).
 The object is linked here: sections are placed one after the other from the cave address and the few
 relocation types clang emits are resolved (absolute words, bl, b.w). Anything else is an error.
@@ -104,20 +107,22 @@ def main(src, show_syms=False):
     cave = tag('cave') or re.findall(r'^\s*\.equ\s+CAVE\s*,\s*(0x[0-9a-fA-F]+)', text, re.M)
     cave = int(cave[0].split()[0], 16)
     fw_syms = {f[0]: int(f[1], 16) for f in (l.split() for l in tag('sym'))}
-    hooks = [[True] + l.split(None, 2) for l in tag('hook')] + [[False] + l.split(None, 2) for l in tag('jump')]
+    hooks = [['bl'] + l.split(None, 2) for l in tag('hook')] + [['b.w'] + l.split(None, 2) for l in tag('jump')] + \
+            [['word'] + l.split(None, 2) for l in tag('word')]
     with tempfile.TemporaryDirectory() as d:
         obj = os.path.join(d, 'patch.o')
         extra = CFLAGS if src.endswith('.c') else []
         subprocess.run(CLANG + extra + ['-c', src, '-o', obj], check=True)
         code, addr_of = link(obj, cave, fw_syms)
     raw = open(os.path.join(ROOT, 'firmware', 'R039', 'IMG.raw'), 'rb').read()
+    raw += bytes(max(0, cave - BASE + len(code) + 4 - len(raw)))      # past the stock end: zeros, as build.py
     h = lambda a, n: hashlib.sha256(raw[a - BASE:a - BASE + n]).hexdigest()[:16]
     if any(raw[cave - BASE:cave - BASE + len(code)]):
         sys.exit(f'asm2patch: 0x{cave:08x}..+{len(code)} is not zero padding in stock R039')
-    for is_bl, addr, label, *comment in hooks:
+    for kind, addr, label, *comment in hooks:
         a = int(addr, 16)
-        print(f'0x{a:08x}  sha256:{h(a, 4)}  {branch(a, addr_of[label] & ~1, is_bl).hex()}  # '
-              f'{comment[0] if comment else ("bl " if is_bl else "b.w ") + label}')
+        new = struct.pack('<I', addr_of[label]) if kind == 'word' else branch(a, addr_of[label] & ~1, kind == 'bl')
+        print(f'0x{a:08x}  sha256:{h(a, 4)}  {new.hex()}  # {comment[0] if comment else kind + " " + label}')
     if show_syms:
         for name, a in sorted(addr_of.items(), key=lambda x: x[1]):
             if cave <= a < cave + len(code):

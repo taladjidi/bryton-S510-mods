@@ -132,6 +132,7 @@ class Tools(unittest.TestCase):
         if not shutil.which('node'):
             self.skipTest('node not installed')
         self.build('recommended')                                                     # test.mjs reads build/recommended
+        self.build('-n', 'all', 'P1', 'P3', 'P5', 'P6', 'P7', 'P8')                   # and build/all
         r = subprocess.run(['node', 'site/test.mjs'], cwd=ROOT, capture_output=True, text=True,
                            env={**os.environ, 'BUILD_DIR': build.OUT})
         self.assertEqual(r.returncode, 0, r.stderr)

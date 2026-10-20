@@ -190,6 +190,28 @@ one place the Quick Status pages read it). The firmware image only holds code an
 lives elsewhere in RAM), so the one value `P7` keeps, the key report's handle, is stored in RTC backup register
 20, which Bryton does not use.
 
+## HRV recording (P8)
+
+Heart rate straps send the time of each beat, but the stock firmware keeps only the heart rate. With ANT+, its
+decoder (Nordic's) holds the time of the last beat in 1/1024 s and a beat counter, and only adds them to running
+totals; `P8` notes both around that call (`0xd02898d8`): one new beat gives one RR interval, and when a message
+was missed (two new beats) the time of the beat before the last one, which straps send on data page 4, splits
+the gap. With Bluetooth, Nordic's heart rate client already decodes the RR intervals of each notification into
+the event it hands to Bryton's handler, which only reads the heart rate; `P8` points the handler (a function
+pointer in a literal pool, `0xd029e634`) at a wrapper that queues them first. RR intervals outside 250-2500 ms
+are dropped.
+
+Right after the firmware writes each 1-second record to the activity file (`0xd021b632`), the queued intervals
+are written to the same file as standard FIT `hrv` messages (global message 78, up to 5 intervals in ms each),
+as Garmin units do, so analysis tools read them without anything special. They use local message number 10,
+which the firmware never uses, with the definition written before each message so the file stays valid however
+the firmware opens or resumes it (about 30 KB more per hour). The queue lives in RTC backup registers 21-31.
+
+`P8` is the first patch whose code does not fit in the zero padding at the end of the image. The bootloader
+copies 6 MB from the OS area to `0xd0000000` at every boot, and the lowest SDRAM address the firmware's code
+uses is `0xd0600000`, so the space between the end of the stock image and there is unused: `build.py` (and the
+web builder) grow the image into it when a patch asks for it, and move the additive-sum trailer to the new end.
+
 ## Battery percentage
 
 Voltage only: a 100-entry table maps millivolts to percent (3450 mV = 0 %, ≈3790 mV = 50 %, ≥ 4140 mV = 100 %).

@@ -57,6 +57,20 @@ def verify_vanilla():
             die(f'{path} does not match firmware/SHA256SUMS; these patches are for stock R039 only; stop')
 
 
+# The bootloader copies 6 MB from the OS area to SDRAM 0xd0000000 and the firmware's own data starts at 0xd0600000
+# (lowest SDRAM address its code uses), so new code may also go after the stock image, up to there. The new space
+# counts as zeros (for the sha256 checks) and the additive-sum trailer moves to the new end.
+GROW_END = 0xd0600000
+
+
+def grow(raw, end):
+    """Make room for a patch ending at image offset end (before the trailer)."""
+    if end + 4 > len(raw):
+        if BASE + end + 4 > GROW_END:
+            die(f'0x{BASE + end:08x}: past 0x{GROW_END:08x}, where the firmware keeps its data')
+        raw.extend(bytes((end + 4 + 15) // 16 * 16 - len(raw)))
+
+
 def h16(b):
     return hashlib.sha256(b).hexdigest()[:16]
 
@@ -173,6 +187,8 @@ def main(argv):
             else:
                 _, a, want, new = e
                 o = a - BASE
+                if o >= len(van):
+                    grow(raw, o + len(new))
                 if 0 <= o <= len(raw) - 4 - len(new) and h16(raw[o:o + len(new)]) != want:
                     die(f'{fname}: 0x{a:08x} original bytes do not match sha256:{want}; wrong firmware/addr, '
                         f'or already patched?')
@@ -188,7 +204,7 @@ def main(argv):
             manifest.append(f'  0x{a:08x}  {len(new)} B -> {new.hex()}{note}')
     raw[-4:] = add_sum(raw[:-4]).to_bytes(4, 'little')
     raw = bytes(raw)
-    diff = [i for i in range(len(raw) - 4) if raw[i] != van[i]]
+    diff = [i for i in range(len(raw) - 4) if raw[i] != (van[i] if i < len(van) else 0)]
     if any(i not in owned for i in diff):
         die('bytes changed outside the declared patches')   # cannot happen; belt and braces
 
