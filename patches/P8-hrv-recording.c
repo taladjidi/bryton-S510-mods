@@ -1,11 +1,12 @@
-// P8 (tested on a 97 min ride; the SRAM4 ring for P9 is newer and untested): record beat-to-beat heart rate (RR intervals) in the ride file, so HRV and DFA a1
+// P8 (tested on a 97 min ride; the SRAM4 ring for P9 and the recovery after missed ANT+ messages are newer, untested): record beat-to-beat heart rate (RR intervals) in the ride file, so HRV and DFA a1
 // can be analysed afterwards (Intervals.icu, Runalyze, Kubios...). Written as the standard FIT "hrv" message
 // (global 78: up to 5 RR intervals per message, in ms), like Garmin units do. Nothing changes on screen.
 //
 // Where the beats come from:
 // - ANT+ straps: Bryton's ANT+ heart rate decoder (Nordic's) keeps the time of the last beat (1/1024 s) and a
-//   beat counter, and only adds them to running totals. Around its call, one new beat = one RR interval; two new
-//   beats (one message missed) use the time of the beat before the last one, which straps send on data page 4.
+//   beat counter, and only adds them to running totals. Around its call, one new beat = one RR interval. After
+//   missed messages (the channel runs at 4 Hz, so radio losses), the time of the beat before the last one, which
+//   straps send on data page 4, still gives the last interval, and with two new beats the first one too.
 // - Bluetooth straps: Nordic's heart rate client already decodes the RR intervals of each notification (up to 20,
 //   1/1024 s) into the event it hands to Bryton's handler, which only reads the heart rate.
 // RR intervals outside 250-2500 ms (24-240 bpm) are dropped as glitches.
@@ -86,11 +87,12 @@ uint32_t ant_hr_process(void *evt, void *a, void *b, void *c)
     uint16_t t0 = g_AntHr_lastBeatTime;
     uint32_t r = Ant_Hr_ProcessData(evt, a, b, c);
     uint8_t beats = (uint8_t)(g_AntHr_lastBeatCount - c0);
-    uint16_t t1 = g_AntHr_lastBeatTime, p = g_AntHr_prevBeatTime;
+    uint16_t t1 = g_AntHr_lastBeatTime, p = g_AntHr_prevBeatTime, dp = (uint16_t)(p - t0);
     if (beats == 1)
         push_rr((uint16_t)(t1 - t0));
-    else if (beats == 2 && (uint16_t)(p - t0) < (uint16_t)(t1 - t0)) {   // page 4 time falls between the two
-        push_rr((uint16_t)(p - t0));
+    else if (beats >= 2 && dp && dp < (uint16_t)(t1 - t0)) {   // page 4 time falls between: fresh
+        if (beats == 2)
+            push_rr(dp);                                     // 3+ beats: that first span holds several, dropped
         push_rr((uint16_t)(t1 - p));
     }
     return r;
