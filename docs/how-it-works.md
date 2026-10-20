@@ -237,6 +237,16 @@ beats and shows `--` when no beat came for 5 s. The field's title object points 
 `tools/ewstr.py`) with "DFA a1" at the index the old `Non` had. `tests/test_tools.py` checks the C code against a
 plain Python DFA (white noise gives 0.5, a random walk 1.5).
 
+The value also goes into the ride file, as a FIT developer field named `Alpha1` (float32, invalid when the field
+would show `--`), the name Intervals.icu reads for its DFA a1 chart. Bryton writes the two record definitions (local
+1 with position, local 2 without) in `Fit_WriteRecordDefLocal1`/`2`: `P9` takes over their call to
+`Fit_WriteDefinitionMsg` (`0xd0218490`, `0xd02186d2`), writes a `developer_data_id` and a `field_description`
+("Alpha1") on local message 11, then the definition with the developer data flag and one developer field. Each
+record is built in a 63-byte buffer by `HRLog_Sensor_Point`; after its last field (`HRLog_Point_AddCoreTemp`,
+called at `0xd021b620`) `P9` appends the 4 bytes. A definition whose records would not fit gets no developer field.
+The value for the records is computed in the logging task with its own buffer (`0x3800d000`). Developer fields
+need FIT protocol 2.0: `Fit_BuildFileHeader` (`0xd0293f44`) now writes `0x20` instead of `0x10`.
+
 The new title is an Embedded Wizard string blocks, and a block must be a chain of entries
 (`[length + 3, 0x4557] text NUL`) from its first byte to a 0: the string cache (`EwDisposeStrings`, `0x317a`)
 walks it with `p += *p` to find an entry still in use and frees the block when it reaches the 0. The first
@@ -258,6 +268,15 @@ the end of Heart Rate (18 -> 19 items: field 12, DFA a1), one immediate in each 
 other functions through a `b.w` at their first instruction: for the new item the name is field 12's title
 (`DFA a1` with `P9`), and picking it writes 12 into the slot, then calls Bryton's code with an unknown category, which writes nothing and
 saves the slot as it is. Everything else runs the stock code.
+
+## Reminders (stock, no patch)
+
+`Remind_CheckReminders` (`0xd026ae74`) runs once a second while recording. Each of the six reminders
+(`[Reminder1..6]` in `System/BikeNProfile.ini`) has a condition (`WhichReminder`: 0 trip time, 1 clock time, 2
+distance, 3 calories, 4 Total Work in kJ, 5 heart rate), a frequency (`ReminderFreq`: 1 once, 2 repeats) and a type
+(`ReminderType`: 0 drink, 1 eat, 2 rest, ...). For trip time, distance, calories and Total Work it fires when the value
+has grown by one step since the reminder was loaded, then, with *Repeats*, restarts from the current value. Total
+Work comes from the power data, calories from the calorie estimate. All six conditions are in the unit's menu.
 
 ## Battery percentage
 

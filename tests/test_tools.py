@@ -136,6 +136,11 @@ class Tools(unittest.TestCase):
         with open(drv, 'w') as f:
             f.write(f'#include <stdio.h>\n#include "{os.path.join(build.PATCHES, "P9-live-dfa-a1.c")}"\n'
                     'uint32_t OSTimeGet(void) { return 0; }\n'
+                    'void Fit_WriteDefinitionMsg(uint32_t l, const void *d, uint32_t n, void *f) {}\n'
+                    'void Fit_WriteDataMsg(uint32_t l, const void *d, uint32_t n, void *f) {}\n'
+                    'void Fit_WriteRaw(const void *b, uint32_t n, void *f) {}\n'
+                    'void HRLog_Point_AddCoreTemp(void) {}\n'
+                    'uint8_t g_HRLog_pointBuf[63]; volatile uint8_t g_HRLog_pointLen;\n'
                     'int main(void) { static float x[512]; int n = 0;\n'
                     '  while (n < 512 && scanf("%f", &x[n]) == 1) n++;\n  printf("%f", dfa_a1(x, n)); }\n')
         subprocess.run(['clang', '-O1', '-w', drv, '-o', drv[:-2], '-lm'], check=True)

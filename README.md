@@ -24,10 +24,15 @@ Bryton's own firmware, copy two files to the unit, done.
 | Fix: the 3 s / 10 s / 30 s power fields also move before the ride starts (they stayed frozen until a GPS fix). | `P6` |
 | **Media buttons for your phone** in the overview (the panel a tap on the ride screen opens): previous, play/pause, next, volume down/up, for whatever app is playing. Turn on **Multimedia Control** in Quick Status. **Re-pair once after installing** (see below). **Only tested with an iPhone so far.** | `P7` |
 | **HRV recording:** beat-to-beat heart rate (RR intervals) from ANT+ or Bluetooth straps is saved in the ride file, so Intervals.icu, Runalyze or Kubios can show HRV and DFA a1 afterwards. Nothing changes on screen. **Tested on a 97 min ride (ANT+ strap): 96% of beats recorded, about 3% artifacts. Intervals.icu keeps the beats (Ride CSV) but does not chart DFA a1 from them on its own.** | `P8` |
-| **Live DFA a1 field** (aerobic threshold from heart rate variability: about 0.75 at the threshold, above 1 when easy), from the beats of the last 2 minutes. Needs `P8` and a strap that sends beat times. Pick it on the unit with `P11` (Heart Rate category, last item), or with `GridN=12` in `System/Bike1Profile.ini`. **Not yet tested on a unit.** | `P9` |
+| **Live DFA a1 field** (aerobic threshold from heart rate variability: about 0.75 at the threshold, above 1 when easy), from the beats of the last 2 minutes. Needs `P8` and a strap that sends beat times. Pick it on the unit with `P11` (Heart Rate category, last item), or with `GridN=12` in `System/Bike1Profile.ini`. The value is also saved in the ride file every second as `Alpha1`, the field Intervals.icu charts (as from the AlphaHRV app on Garmin units). **Not yet tested on a unit.** | `P9` |
 | **DFA a1 in the field menu:** pick the live DFA a1 field on the unit (Heart Rate category, last item), on the ride screen or in Settings, instead of editing `Bike1Profile.ini`. Take it with `P9`. Tested on the unit (both menus). | `P11` |
 
 `P1` `P3` `P5` `P6` `P7` together are the **recommended** set, the default in the web builder.
+
+> [!TIP]
+> **Fueling reminders by energy need no patch.** In Settings > bike > Reminders, set *Reminder by* to Total Work
+> (kJ, needs a power meter) or Calories, frequency *Repeats*, type *Eat* or *Drink*: the unit alerts every N kJ or
+> calories while recording.
 
 > [!IMPORTANT]
 > **`P7` needs the phone to be paired again once.** After installing, on the phone open the Bluetooth settings,
