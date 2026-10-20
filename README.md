@@ -19,13 +19,12 @@ Bryton's own firmware, copy two files to the unit, done.
 | Change | Patch |
 |--------|-------|
 | **3 countdown beeps** (3-2-1) before a workout step ends, instead of ~9 | `P1` |
-| The full-screen "next step" popup becomes a **small strip over the chart** (next duration + target), without dimming the screen | `P3` |
-| Fix: that strip always hides when the step changes (even on 15 s intervals) | `P4` |
+| The full-screen "next step" popup becomes a **small strip over the chart** (next duration + target), without dimming the screen; it always hides when the step changes, even on 15 s intervals | `P3` |
 | **Tap the big power number** on a power step to switch between instant, 3 s, 10 s and 30 s average power. The box shows `3s` / `10s` / `30s`; the choice is kept across restarts. | `P5` |
 | Fix: the 3 s / 10 s / 30 s power fields also move before the ride starts (they stayed frozen until a GPS fix). **Not yet confirmed on a unit.** | `P6` |
 | **Media buttons for your phone** in the overview (the panel a tap on the ride screen opens): previous, play/pause, next, volume down/up, for whatever app is playing. Turn on **Multimedia Control** in Quick Status. **Re-pair once after installing** (see below). **Only tested with an iPhone so far.** | `P7` |
 
-`P1` `P3` `P4` `P5` `P7` together are the **workout** set, the default in the web builder; tick `P6` to add it.
+`P1` `P3` `P5` `P7` together are the **recommended** set, the default in the web builder; tick `P6` to add it.
 
 > [!IMPORTANT]
 > **`P7` needs the phone to be paired again once.** After installing, on the phone open the Bluetooth settings,
@@ -97,7 +96,7 @@ Python ≥ 3.8 on macOS, Linux or Windows; `tqdm` is optional (progress bars).
 ```sh
 git clone https://github.com/taladjidi/bryton-S510-mods && cd bryton-S510-mods
 python3 tools/fetch_firmware.py      # stock R039 from Bryton's server, must print "OK (stock R039)" twice
-python3 deploy.py workout            # build + copy to the BRYTON drive + verify (macOS also ejects)
+python3 deploy.py recommended        # build + copy to the BRYTON drive + verify (macOS also ejects)
 python3 deploy.py vanilla            # back to stock
 python3 deploy.py -n mine P1 P5      # your own selection; build.py alone builds without copying
 ```

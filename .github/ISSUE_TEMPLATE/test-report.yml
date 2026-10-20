@@ -25,8 +25,9 @@ body:
       options:
         - label: P1 (3 countdown beeps)
         - label: P3 (next-step strip)
-        - label: P4 (strip hides on step change)
         - label: P5 (tap to switch instant / 3s / 10s / 30s power)
+        - label: P6 (3s / 10s / 30s power before the ride starts)
+        - label: P7 (media buttons for the phone)
         - label: Other (say which below)
   - type: dropdown
     id: method

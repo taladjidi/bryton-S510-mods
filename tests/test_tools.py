@@ -11,9 +11,9 @@ ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
 sys.path[:0] = [ROOT, os.path.join(ROOT, 'tools')]
 import build, deploy, fetch_firmware  # noqa: E402
 
-# The "workout" set = P1 P3 P4 P5 P7: the image of FLASHLOG #11 (P1 P3 P4 P5 P6 P7, OK on the test unit) without P6,
+# The "recommended" set = P1 P3 P5 P7 (P3 includes the former P4): the image of FLASHLOG #11 (OK on the test unit) without P6,
 # whose bytes no other patch touches. If this changes, the default set is no longer what was tested.
-WORKOUT_RAW_SHA = 'f9eee6e328a2c1bb5757483560d415dfaf4b6217986d45e1853f6151946115e8'
+RECOMMENDED_RAW_SHA = 'f9eee6e328a2c1bb5757483560d415dfaf4b6217986d45e1853f6151946115e8'
 STOCK_IMG = os.path.join(build.VAN, 'img.bin')
 
 
@@ -51,8 +51,8 @@ class Tools(unittest.TestCase):
         pkg = self.build('vanilla')
         self.assertEqual(open(os.path.join(pkg, 'IMG.bin'), 'rb').read(), open(STOCK_IMG, 'rb').read())
 
-    def test_workout_is_the_tested_image(self):
-        self.assertEqual(sha(self.raw_of(self.build('workout'))), WORKOUT_RAW_SHA)
+    def test_recommended_is_the_tested_image(self):
+        self.assertEqual(sha(self.raw_of(self.build('recommended'))), RECOMMENDED_RAW_SHA)
 
     def test_every_patch_builds_and_only_changes_its_bytes(self):
         van = open(os.path.join(build.VAN, 'IMG.raw'), 'rb').read()
@@ -63,7 +63,7 @@ class Tools(unittest.TestCase):
             self.assertTrue(0 < changed < 1600, f'{pid}: {changed} bytes changed')   # 1600: the free image tail
 
     def test_package_passes_the_units_checks(self):
-        pkg = self.build('workout')
+        pkg = self.build('recommended')
         img = open(os.path.join(pkg, 'IMG.bin'), 'rb').read()
         self.assertEqual(len(img) % 512, 0)
         self.assertEqual(sum(img[:-4]) & 0xffffffff, int.from_bytes(img[-4:], 'little'))
@@ -92,13 +92,13 @@ class Tools(unittest.TestCase):
         deploy.ROOT, platform.system = self.tmp, lambda: 'Linux'               # log in tmp, no diskutil eject
         try:
             with contextlib.redirect_stdout(io.StringIO()):
-                deploy.main(['--drive', drive, 'workout'])
+                deploy.main(['--drive', drive, 'recommended'])
                 open(os.path.join(drive, 'IAP.bin'), 'w').write('x')
                 with self.assertRaises(SystemExit):                              # never next to a bootloader file
-                    deploy.main(['--drive', drive, 'workout'])
+                    deploy.main(['--drive', drive, 'recommended'])
         finally:
             deploy.ROOT, platform.system = saved
-        self.assertEqual(sha(self.raw_of(drive)), WORKOUT_RAW_SHA)
+        self.assertEqual(sha(self.raw_of(drive)), RECOMMENDED_RAW_SHA)
         self.assertIn('| 0 |', open(os.path.join(self.tmp, 'FLASHLOG.md')).read())
 
     def test_readback_must_be_stock(self):
@@ -131,7 +131,7 @@ class Tools(unittest.TestCase):
     def test_web_builder_agrees(self):
         if not shutil.which('node'):
             self.skipTest('node not installed')
-        self.build('workout')                                                     # test.mjs reads build/workout
+        self.build('recommended')                                                     # test.mjs reads build/recommended
         r = subprocess.run(['node', 'site/test.mjs'], cwd=ROOT, capture_output=True, text=True,
                            env={**os.environ, 'BUILD_DIR': build.OUT})
         self.assertEqual(r.returncode, 0, r.stderr)

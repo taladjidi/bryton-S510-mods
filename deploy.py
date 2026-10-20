@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Build a package and stage it on the bike computer for its next startup.
 
-  ./deploy.py workout        the recommended set of patches (see build.py PRESETS)
+  ./deploy.py recommended    the recommended set of patches (see build.py PRESETS)
   ./deploy.py vanilla        the untouched firmware (normal way back to stock)
   ./deploy.py -n NAME P1 P3  your own selection
   ./deploy.py --drive PATH … if the BRYTON drive is not found automatically

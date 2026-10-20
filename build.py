@@ -2,7 +2,7 @@
 """Build a flashable Rider S510 IMG.bin from the stock R039 image + patch files. Never modifies firmware/R039.
 
   ./build.py vanilla                 package the untouched firmware (normal way back to stock)
-  ./build.py workout                 the recommended set (PRESETS below) -> build/workout/
+  ./build.py recommended             the recommended set (PRESETS below) -> build/recommended/
   ./build.py [-n NAME] P1 [P3 ...]   apply patches/<id>-*.patch in order -> build/NAME/
 
 A package is IMG.bin + update.ini (the unit only checks that update.ini exists; see docs/how-it-works.md).
@@ -29,7 +29,8 @@ VAN, PATCHES, OUT = os.path.join(ROOT, 'firmware', 'R039'), os.path.join(ROOT, '
 SUMS = os.path.join(ROOT, 'firmware', 'SHA256SUMS')
 BASE = 0xd0000000
 GZ_HDR = b'\x1f\x8b\x08\x08\xc4\x38\xb2\x6a\x00\x0bIMG.bin\x00'   # vanilla header (FNAME, same mtime/OS)
-PRESETS = {'workout': ['P1', 'P3', 'P4', 'P5', 'P7']}     # also offered by the web builder (site/)
+PRESETS = {'recommended': ['P1', 'P3', 'P5', 'P7']}     # also offered by the web builder (site/)
+PRESETS['workout'] = PRESETS['recommended']               # its old name
 
 
 def die(msg):

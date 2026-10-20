@@ -1,6 +1,6 @@
 title:  Next-step popup becomes a small strip over the chart
-desc:   next-step popup as a 72 px strip over the chart, target + duration, no dimming
-source: docs/how-it-works.md#workout-next-step-popup (popup layout)
+desc:   next-step popup as a 72 px strip over the chart, target + duration, no dimming; always hides when the step changes, even on 15 s intervals
+source: docs/how-it-works.md#workout-next-step-popup (popup layout, and the hide fix that was P4)
 0xd0086d6c  sha256:19a6dab4637990ad  00000000  # backdrop m64 colour: dark 0xc8000000 -> transparent
 0xd0086d70  sha256:c9ec593f72488a67  0000000000000000f000000048000000  # PANEL 0,192,240,320 -> 0,0,240,72
 0xd0086dc0  sha256:ae5e395837741901  0a00000002000000e600000027000000  # TEXT_DURATION -> 10,2,230,39
@@ -10,3 +10,7 @@ source: docs/how-it-works.md#workout-next-step-popup (popup layout)
 0xd0086d80  sha256:666b49c763f330a6  d0feffff00000000c0ffffff25000000  # header N/M text + close area -> off-screen
 0xd0086da8  sha256:532e755243485e29  d0feffff00000000c0ffffff25000000  # step kind text -> off-screen
 0xd0158fbc  sha256:ac85bced3f8f3849  e06d08d0  # pool -> BAR rect: use SUBDIALOG_B rect (off-screen); shared BAR untouched
+# Fix (was P4): the strip only shows while the step-end countdown runs, so it always hides on a step change.
+# Workout_UpdateRuntime 0xd01ab5ec, countdown-not-active branch: the call to a stub that always returns 0 (and the
+# dead branches after it) becomes "g_Workout_nextStepPreviewShown = 0" (pool word 0xd01ab9d8 holds its address)
+0xd01ab77c  sha256:ed8af40d17432f14  dff85812087008e0  # ldr.w r1,[pc,#0x258]; strb r0,[r1]; b 0xd01ab796

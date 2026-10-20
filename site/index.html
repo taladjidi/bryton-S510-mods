@@ -113,7 +113,10 @@
   </ul>
 
   <h2><span class="n">2</span> Choose what to change</h2>
-  <div class="card" id="patches"><p>Loading the list…</p></div>
+  <h3>Phone</h3>
+  <div class="card" id="patches-phone"><p>Loading the list…</p></div>
+  <h3>Workout screen</h3>
+  <div class="card" id="patches-workout"></div>
   <details id="devbox" hidden><summary>Developer and test patches</summary><div class="card" id="devpatches"></div></details>
 
   <h2><span class="n">3</span> Build</h2>
@@ -179,7 +182,7 @@ let patches = {}, result = null;
 
 async function loadPatches() {
   const files = await (await fetch('patches/index.json')).json();
-  $('patches').textContent = '';
+  $('patches-phone').textContent = '';
   for (const f of files) {
     const id = f.split('-')[0], p = parsePatch(id, await (await fetch('patches/' + f)).text());
     patches[id] = p;
@@ -188,11 +191,11 @@ async function loadPatches() {
     el.className = 'patch';
     el.innerHTML = '<input type="checkbox"><span></span><small></small>';
     el.querySelector('input').value = id;
-    el.querySelector('input').checked = PRESETS.workout.includes(id);
+    el.querySelector('input').checked = PRESETS.recommended.includes(id);
     el.querySelector('input').disabled = !!p.unsupported;
     el.querySelector('span').textContent = p.title || id;
     el.querySelector('small').textContent = `${id} · ${p.unsupported ? p.unsupported : p.desc}`;
-    $(dev ? 'devpatches' : 'patches').append(el);
+    $(dev ? 'devpatches' : id === 'P7' ? 'patches-phone' : 'patches-workout').append(el);   // ponytail: one phone patch
     if (dev) $('devbox').hidden = false;
   }
 }

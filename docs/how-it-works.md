@@ -118,7 +118,7 @@ live in block `0xd0000eec`. Field IDs used in `System/Bike*Profile.ini` (`GridN=
 
 On the unit, P1 + P3 sometimes kept the strip up for the whole next step: right after a step change the "show"
 flag can be re-armed (a race between the UI's 1-second update and the workout task's step change; it doesn't
-happen every time). `P4` fixes it without chasing the race: on the path of `Workout_UpdateRuntime` (`0xd01ab5ec`)
+happen every time). `P3` also fixes it (this part was `P4` before the two were merged), without chasing the race: on the path of `Workout_UpdateRuntime` (`0xd01ab5ec`)
 where the step-end countdown is *not* running, the flag is cleared. That path ended with a call to a stub that
 always returns 0 followed by branches that all return, so those 8 bytes become `ldr.w r1,[&flag]; strb r0,[r1];
 b <return>` (r0 is already 0). The countdown flag is recomputed from fresh step data on every update, so the

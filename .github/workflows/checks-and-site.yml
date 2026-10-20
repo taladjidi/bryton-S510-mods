@@ -1,4 +1,4 @@
-# Every push: download stock R039 from Bryton and run tests/test_tools.py (every patch and the "workout" preset,
+# Every push: download stock R039 from Bryton and run tests/test_tools.py (every patch and the "recommended" preset,
 # bad input refused, deploy to a fake drive, readback import, web builder (site/) == build.py).
 # Pushes to main then publish the web builder to GitHub Pages, only if all of that passed.
 name: checks and site
