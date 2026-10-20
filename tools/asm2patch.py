@@ -2,6 +2,7 @@
 """Build a code patch (patches/<id>-*.s or *.c) and print its lines for the .patch file.
 
   python3 tools/asm2patch.py patches/P5-centre-power-mode.s
+  python3 tools/asm2patch.py --syms patches/P7-media-remote.c     also list where each function landed
 
 The source declares, in comments ('@' in assembly, '//' in C):
   @cave 0xd03d69d0                        load address of the new code (unused space in the image)
@@ -96,7 +97,7 @@ def link(obj, cave, fw_syms):
     return bytes(blob), addr_of
 
 
-def main(src):
+def main(src, show_syms=False):
     text = open(src).read()
     tag = lambda t: re.findall(rf'^\s*(?://\s*)?@{t}\s+(.*)$', text, re.M)
     cave = tag('cave') or re.findall(r'^\s*\.equ\s+CAVE\s*,\s*(0x[0-9a-fA-F]+)', text, re.M)
@@ -116,11 +117,16 @@ def main(src):
         a = int(addr, 16)
         print(f'0x{a:08x}  sha256:{h(a, 4)}  {branch(a, addr_of[label] & ~1, True).hex()}  # '
               f'{comment[0] if comment else "bl " + label}')
+    if show_syms:
+        for name, a in sorted(addr_of.items(), key=lambda x: x[1]):
+            if cave <= a < cave + len(code):
+                print(f'# 0x{a:08x} {name}')
     print(f'0x{cave:08x}  sha256:{h(cave, len(code))}  {code.hex()}  # code: {os.path.basename(src)} '
           f'({len(code)} B, ends 0x{cave + len(code):08x})')
 
 
 if __name__ == '__main__':
-    if len(sys.argv) != 2:
+    args = [a for a in sys.argv[1:] if a != '--syms']
+    if len(args) != 1:
         sys.exit(__doc__)
-    main(sys.argv[1])
+    main(args[0], '--syms' in sys.argv)
