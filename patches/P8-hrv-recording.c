@@ -1,4 +1,4 @@
-// P8 (not yet tested on a unit): record beat-to-beat heart rate (RR intervals) in the ride file, so HRV and DFA a1
+// P8 (short test OK on a unit, longer ride pending): record beat-to-beat heart rate (RR intervals) in the ride file, so HRV and DFA a1
 // can be analysed afterwards (Intervals.icu, Runalyze, Kubios...). Written as the standard FIT "hrv" message
 // (global 78: up to 5 RR intervals per message, in ms), like Garmin units do. Nothing changes on screen.
 //
