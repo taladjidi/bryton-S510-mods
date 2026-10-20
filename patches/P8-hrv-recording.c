@@ -15,6 +15,7 @@
 // definition is written before each message, so the file stays valid however Bryton opens or resumes it).
 // The queue lives in RTC backup registers 21-31 (writable, unused by Bryton; P5 uses 8, P7 20): the image area
 // may not be writable. If nothing drains it (not recording), it starts over instead of keeping stale beats.
+// The beats also go to a 512-beat ring in SRAM4 for the live DFA a1 field (P9); without P9 nothing reads it.
 //
 // Build: python3 tools/asm2patch.py patches/P8-hrv-recording.c
 // @cave 0xd03d7000          right after the stock image (build.py grows the image, see GROW_END)
@@ -43,6 +44,12 @@ extern volatile uint16_t g_AntHr_prevBeatTime;     // page 4 bytes 2-3: time of 
 #define BKP(n) (((volatile uint32_t *)0x58004050)[n])      // RTC backup registers
 enum { COUNT = 21, FIRST = 22, SLOTS = 10 };               // queue: count in 21, RR (1/1024 s) in 22-31
 
+// The last 512 beats also go to a ring in SRAM4 (64 KB at 0x38000000, never used by Bryton's code), for the live
+// DFA a1 field (P9). Contents are random after power-on, hence the magic.
+#define RING_MAGIC 0x52523031u                              // "RR01"
+struct rr_ring { uint32_t magic, head; uint16_t rr[512]; };
+#define RING ((volatile struct rr_ring *)0x3800f000)
+
 static uint32_t irq_off(void)
 {
     uint32_t p;
@@ -64,6 +71,11 @@ static void push_rr(uint32_t rr)
         n = 0;
     BKP(FIRST + n) = rr;
     BKP(COUNT) = n + 1;
+    if (RING->magic != RING_MAGIC) {
+        RING->magic = RING_MAGIC;
+        RING->head = 0;
+    }
+    RING->rr[RING->head++ & 511] = rr;
     irq_restore(p);
 }
 

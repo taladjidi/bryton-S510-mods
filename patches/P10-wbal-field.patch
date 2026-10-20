@@ -1,0 +1,7 @@
+title:  Working W' balance data field (anaerobic capacity left, kJ) [not yet tested on a unit]
+desc:   Field ID 180 (W' Bal, already in the firmware but always --) shows W'bal from power and FTP (W' 20 kJ unless set in the app); pick it with GridN=180 in System/Bike1Profile.ini
+source: patches/P10-wbal-field.c, docs/how-it-works.md
+0xd0280aaa  sha256:80557a09215f89ed  58f1a9fa  # RidePower_Tick: bl Ride_UpdateWorkKj -> bl wbal_tick
+0xd03b3988  sha256:c2a79ecb1a20382b  05913dd0  # field table, ID 180 ("W' Bal") -> wbal_bind
+0xd017a658  sha256:1090a656429b64b9  ff29  # MeterMixGridVir_GetFieldWidgetKind: cmp r1,#0xb4 -> cmp r1,#0xff (field 180 drawn as a number)
+0xd03d9000  sha256:0b449271fd114470  10b52ded0a7ba9f6c5f90020cde90000b0ee408a334890ed009a01a91820bff627fb9fed321a9fed300a9fed312a314c3148b4ee491af1ee10fab4ee429a216829fe001af1ee10fa21fe009a814208d19ded010a94ed031ab4ee410af1ee10fa04d5206084ed019a9ded010a234884ed030a84ed029a008894ed01aa68b300ee100a69464f20b8ee40babff6f1fa9fed1c0a80b19ded001ab5ee401af1ee10fa09d4b4ee4b1af1ee10fa02dd3bee410a09e0b0ee410a3bee400a39ee4a1a21ee000a80ee090a3aee000ab4ee409af1ee10fa30fe090a84ed010ab0ee480abdec0a7b10bdc4cb062400409c4600606a4700409c4500f80038314142573ecb062400000000c0ebc000112102eb8000c0f8a4100021c0f8a0100149c0f89810704725913dd00b49bfee000a80690a4b0a689a420ad1094a12883ab191ed010a9fed081a012180ee010a00e0ff21017180ed000a704700f80038314142573ecb062400007a44  # code: P10-wbal-field.c (356 B, ends 0xd03d9164)

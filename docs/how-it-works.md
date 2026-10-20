@@ -212,6 +212,42 @@ copies 6 MB from the OS area to `0xd0000000` at every boot, and the lowest SDRAM
 uses is `0xd0600000`, so the space between the end of the stock image and there is unused: `build.py` (and the
 web builder) grow the image into it when a patch asks for it, and move the additive-sum trailer to the new end.
 
+## Data fields: how a value gets on screen
+
+Each data field has an ID (the numbers in `GridN=` lines of `System/Bike1Profile.ini`). `Field_FormatValueString`
+(`0xd0160500`) looks the ID up in a table of 185 small "binder" functions at `0xd03b36b8`; the binder stores a
+value callback and a unit code in a slot, and the callback writes the value (a float) and a format code (`0xff`
+shows `--`, 0 an integer, 1 to 3 decimals, 9 a time). The title comes from `GetDataFieldTitle` (`0xd0150ef8`): one
+object per ID listing, per language, an Embedded Wizard string (block, index). A few IDs are unused and titled
+`Non` with a single (English) string; field 180 is titled `W' Bal` but its callback only ever returns `--`.
+
+New fields replace a binder in that table (a function pointer, so 4 bytes) with one in new code. Their state
+lives in SRAM4 (64 KB at `0x38000000`), which the firmware's code never references: `P8` keeps the last 512 beat
+intervals there (from `0x3800f000`), `P9` its work buffer (`0x3800e000`), `P10` its W' balance (`0x3800f800`).
+Each starts with a magic number, since SRAM4 holds random data after power-on.
+
+## Live DFA a1 (P9)
+
+DFA a1 (detrended fluctuation analysis, short-term exponent) of the beat intervals falls from about 1 at easy
+effort to 0.5 at hard effort and crosses 0.75 near the first ventilatory (aerobic) threshold (Rogers et al.,
+2021). Each time field 12 is drawn, `P9` takes the beats of the last 2 minutes from `P8`'s ring, drops artifacts
+with the usual 5 % rule (a beat more than 5 % away from the previous kept one), integrates the series and, for box
+sizes 4 to 16 beats, fits a line in each box; alpha1 is the slope of log F(n) against log n. It needs 64 clean
+beats and shows `--` when no beat came for 5 s. The field's title object points to a new string block (made with
+`tools/ewstr.py`) with "DFA a1" at the index the old `Non` had. `tests/test_tools.py` checks the C code against a
+plain Python DFA (white noise gives 0.5, a random walk 1.5).
+
+## W' balance (P10)
+
+Skiba's model, in the differential form (Froncioni/Skiba): above CP, W' balance drops by the power above CP each
+second; below CP it recovers by `(W' - W'bal) * (CP - P) / W'`. CP is the FTP set on the unit, W' the value the
+Bryton app may have sent (user profile, `0x2406cbc4`, used when between 5 and 60 kJ), else 20 kJ. The update runs
+once a second from the power tick (`0xd0280aaa`, the call to `Ride_UpdateWorkKj`, after the tick's record-state
+check, so only while recording), and W' balance starts full at each new ride (detected by the ride time going
+back). The firmware's own W' balance code (`0xd0280840`) only runs when the app has sent W' and CP, and its field
+(180) never shows a value. `P10` gives field 180 a working callback (kJ, one decimal) and makes the page draw it
+as a plain number (`0xd017a658`: the compare that picks Bryton's unfinished W' widget for ID 180).
+
 ## Battery percentage
 
 Voltage only: a 100-entry table maps millivolts to percent (3450 mV = 0 %, ≈3790 mV = 50 %, ≥ 4140 mV = 100 %).

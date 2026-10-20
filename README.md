@@ -24,6 +24,8 @@ Bryton's own firmware, copy two files to the unit, done.
 | Fix: the 3 s / 10 s / 30 s power fields also move before the ride starts (they stayed frozen until a GPS fix). **Not yet confirmed on a unit.** | `P6` |
 | **Media buttons for your phone** in the overview (the panel a tap on the ride screen opens): previous, play/pause, next, volume down/up, for whatever app is playing. Turn on **Multimedia Control** in Quick Status. **Re-pair once after installing** (see below). **Only tested with an iPhone so far.** | `P7` |
 | **HRV recording:** beat-to-beat heart rate (RR intervals) from ANT+ or Bluetooth straps is saved in the ride file, so Intervals.icu, Runalyze or Kubios can show HRV and DFA a1 afterwards. Nothing changes on screen. **Short test OK (ANT+ strap, Intervals.icu upload); longer ride pending.** | `P8` |
+| **Live DFA a1 field** (aerobic threshold from heart rate variability: about 0.75 at the threshold, above 1 when easy), from the beats of the last 2 minutes. Needs `P8` and a strap that sends beat times. Pick field 12 by editing the page in `System/Bike1Profile.ini` (`GridN=12`). **Not yet tested on a unit.** | `P9` |
+| **W' balance field** (anaerobic capacity left, kJ; Skiba's model, as in Golden Cheetah and Intervals.icu), from power and your FTP; W' is 20 kJ unless set in the Bryton app. The firmware already lists this field (180) but always shows `--`. Pick it with `GridN=180` in `System/Bike1Profile.ini`. **Not yet tested on a unit.** | `P10` |
 
 `P1` `P3` `P5` `P7` together are the **recommended** set, the default in the web builder; tick `P6` to add it.
 

@@ -11,6 +11,7 @@ The source declares, in comments ('@' in assembly, '//' in C):
   @jump 0xd01a4a32 label  comment         same with "b.w label" (to replace a tail call)
   @word 0xd029e634 label  comment         replace the 4-byte word at 0xd029e634 by label's address (Thumb bit set
                                           for a function): a function pointer in a literal pool
+  @bytes 0xd017a658 ff29  comment         replace bytes as given (e.g. one instruction's immediate)
 The cave may lie after the stock image (build.py grows it, see GROW_END there); that space counts as zeros.
 (assembly may also use ".equ CAVE, 0x..." and firmware targets written relative to a start label, as P5 does).
 The object is linked here: sections are placed one after the other from the cave address and the few
@@ -123,6 +124,9 @@ def main(src, show_syms=False):
         a = int(addr, 16)
         new = struct.pack('<I', addr_of[label]) if kind == 'word' else branch(a, addr_of[label] & ~1, kind == 'bl')
         print(f'0x{a:08x}  sha256:{h(a, 4)}  {new.hex()}  # {comment[0] if comment else kind + " " + label}')
+    for addr, new, *comment in (l.split(None, 2) for l in tag('bytes')):
+        a, new = int(addr, 16), bytes.fromhex(new)
+        print(f'0x{a:08x}  sha256:{h(a, len(new))}  {new.hex()}  # {comment[0] if comment else "bytes"}')
     if show_syms:
         for name, a in sorted(addr_of.items(), key=lambda x: x[1]):
             if cave <= a < cave + len(code):

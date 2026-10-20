@@ -5,7 +5,7 @@
 
 Everything is written to a temporary directory: your build/, patches/ and FLASHLOG.md are not touched.
 """
-import contextlib, hashlib, io, os, platform, shutil, subprocess, sys, tempfile, unittest, zlib
+import contextlib, hashlib, io, math, os, platform, random, shutil, subprocess, sys, tempfile, unittest, zlib
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
 sys.path[:0] = [ROOT, os.path.join(ROOT, 'tools')]
@@ -127,6 +127,46 @@ class Tools(unittest.TestCase):
             patch = open(os.path.join(build.PATCHES, os.path.splitext(f)[0] + '.patch')).read()
             for line in out.splitlines():
                 self.assertIn(' '.join(line.split()[:3]), ' '.join(patch.split()), f'{f}: {line[:60]}')
+
+    def test_dfa_a1_matches_reference(self):
+        """P9's DFA (built for this computer) against a plain Python DFA: white noise ~0.5, brown noise ~1.5."""
+        if not shutil.which('clang'):
+            self.skipTest('clang not installed')
+        drv = os.path.join(self.tmp, 'drv.c')
+        with open(drv, 'w') as f:
+            f.write(f'#include <stdio.h>\n#include "{os.path.join(build.PATCHES, "P9-live-dfa-a1.c")}"\n'
+                    'uint32_t OSTimeGet(void) { return 0; }\n'
+                    'int main(void) { static float x[512]; int n = 0;\n'
+                    '  while (n < 512 && scanf("%f", &x[n]) == 1) n++;\n  printf("%f", dfa_a1(x, n)); }\n')
+        subprocess.run(['clang', '-O1', '-w', drv, '-o', drv[:-2]], check=True)
+
+        def ref(x):
+            m, y, s, pts = sum(x) / len(x), [], 0.0, []
+            for v in x:
+                s += v - m
+                y.append(s)
+            for b in range(4, 17):
+                f2, ks = 0.0, range(b)
+                for k in range(len(y) // b):
+                    seg = y[k * b:(k + 1) * b]
+                    mk, my = (b - 1) / 2, sum(seg) / b
+                    sl = sum((a - mk) * (c - my) for a, c in zip(ks, seg)) / sum((a - mk) ** 2 for a in ks)
+                    f2 += sum((c - my - sl * (a - mk)) ** 2 for a, c in zip(ks, seg))
+                pts.append((math.log(b), math.log(math.sqrt(f2 / (len(y) // b * b)))))
+            ml, mf = sum(p[0] for p in pts) / 13, sum(p[1] for p in pts) / 13
+            return sum((a - ml) * (c - mf) for a, c in pts) / sum((a - ml) ** 2 for a, _ in pts)
+
+        rnd, walk = random.Random(1), 0.0
+        white = [800 + rnd.gauss(0, 20) for _ in range(200)]
+        brown = []
+        for _ in range(200):
+            walk += rnd.gauss(0, 5)
+            brown.append(800 + walk)
+        for x, expect in ((white, 0.5), (brown, 1.5)):
+            got = float(subprocess.run([drv[:-2]], input=' '.join(map(str, x)), capture_output=True, text=True,
+                                       check=True).stdout)
+            self.assertAlmostEqual(got, ref(x), places=3)
+            self.assertAlmostEqual(got, expect, delta=0.15)
 
     def test_web_builder_agrees(self):
         if not shutil.which('node'):
