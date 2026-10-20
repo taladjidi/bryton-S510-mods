@@ -138,7 +138,7 @@ class Tools(unittest.TestCase):
                     'uint32_t OSTimeGet(void) { return 0; }\n'
                     'int main(void) { static float x[512]; int n = 0;\n'
                     '  while (n < 512 && scanf("%f", &x[n]) == 1) n++;\n  printf("%f", dfa_a1(x, n)); }\n')
-        subprocess.run(['clang', '-O1', '-w', drv, '-o', drv[:-2]], check=True)
+        subprocess.run(['clang', '-O1', '-w', drv, '-o', drv[:-2], '-lm'], check=True)
 
         def ref(x):
             m, y, s, pts = sum(x) / len(x), [], 0.0, []
