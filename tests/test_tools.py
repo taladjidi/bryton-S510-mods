@@ -168,6 +168,21 @@ class Tools(unittest.TestCase):
             self.assertAlmostEqual(got, ref(x), places=3)
             self.assertAlmostEqual(got, expect, delta=0.15)
 
+    def test_title_blocks_survive_the_string_cache(self):
+        """P9's field title: the block must be a chain of entries from its start, else Embedded Wizard's
+        EwDisposeStrings (0x317a), which walks it with p += *p to find an entry in use, frees it while shown."""
+        import ewstr
+        raw = self.raw_of(self.build('P9'))
+        for ptr, index, text in ((0xd0054208, 0x78, 'DFA a1'),):
+            block = int.from_bytes(raw[ptr - 0xd0000000:ptr - 0xd0000000 + 4], 'little')
+            out = ewstr.decode(raw, block - 0xd0000000)[0]
+            u, p, starts = [int.from_bytes(out[i:i + 2], 'little') for i in range(0, len(out) - 1, 2)], 0, []
+            while u[p]:
+                starts.append(p)
+                p += u[p]
+            self.assertIn(index - 2, starts, text)                  # the walk reaches the title's entry
+            self.assertEqual(out.decode('utf-16-le')[index:index + len(text) + 1], text + '\0')
+
     def test_web_builder_agrees(self):
         if not shutil.which('node'):
             self.skipTest('node not installed')

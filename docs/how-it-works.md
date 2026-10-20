@@ -223,7 +223,7 @@ object per ID listing, per language, an Embedded Wizard string (block, index). A
 
 New fields replace a binder in that table (a function pointer, so 4 bytes) with one in new code. Their state
 lives in SRAM4 (64 KB at `0x38000000`), which the firmware's code never references: `P8` keeps the last 512 beat
-intervals there (from `0x3800f000`), `P9` its work buffer (`0x3800e000`), `P10` its W' balance (`0x3800f800`).
+intervals there (from `0x3800f000`), `P9` its work buffer (`0x3800e000`).
 Each starts with a magic number, since SRAM4 holds random data after power-on.
 
 ## Live DFA a1 (P9)
@@ -237,16 +237,27 @@ beats and shows `--` when no beat came for 5 s. The field's title object points 
 `tools/ewstr.py`) with "DFA a1" at the index the old `Non` had. `tests/test_tools.py` checks the C code against a
 plain Python DFA (white noise gives 0.5, a random walk 1.5).
 
-## W' balance (P10)
+The new title is an Embedded Wizard string blocks, and a block must be a chain of entries
+(`[length + 3, 0x4557] text NUL`) from its first byte to a 0: the string cache (`EwDisposeStrings`, `0x317a`)
+walks it with `p += *p` to find an entry still in use and frees the block when it reaches the 0. The first
+version padded the block with NULs up to the title's index, so the block was freed while its title was shown,
+and the ride page froze after a minute or when the field was edited (flashes #13 and #14). The padding is now a
+filler entry of spaces; `tests/test_tools.py` walks the block the same way.
 
-Skiba's model, in the differential form (Froncioni/Skiba): above CP, W' balance drops by the power above CP each
-second; below CP it recovers by `(W' - W'bal) * (CP - P) / W'`. CP is the FTP set on the unit, W' the value the
-Bryton app may have sent (user profile, `0x2406cbc4`, used when between 5 and 60 kJ), else 20 kJ. The update runs
-once a second from the power tick (`0xd0280aaa`, the call to `Ride_UpdateWorkKj`, after the tick's record-state
-check, so only while recording), and W' balance starts full at each new ride (detected by the ride time going
-back). The firmware's own W' balance code (`0xd0280840`) only runs when the app has sent W' and CP, and its field
-(180) never shows a value. `P10` gives field 180 a working callback (kJ, one decimal) and makes the page draw it
-as a plain number (`0xd017a658`: the compare that picks Bryton's unfinished W' widget for ID 180).
+Bryton's own W' balance field (180, last item of the Power category) is left as it is: its code (`0xd0280840`)
+only runs once the Bryton app has sent a W' and a CP.
+
+## DFA a1 in the field menus (P11)
+
+Both field menus (long press on a field during a ride, and Settings > data fields) work from tables in code, the
+same in both: the category picks the item count (a compare chain: `0xd01797cc` and `0xd011fade`), an item's name
+is a switch on (category, item) that returns a title object (`0xd0178520`, `0xd011fd98`), and choosing item i writes
+the field ID of (category, i), another switch, into the page's grid slot and saves the page to
+`System/BikeNProfile.ini` (`0xd0178e78`, `0xd01206ec`). Field 12 is in no category. `P11` adds one item at
+the end of Heart Rate (18 -> 19 items: field 12, DFA a1), one immediate in each count function, and enters the four
+other functions through a `b.w` at their first instruction: for the new item the name is field 12's title
+(`DFA a1` with `P9`), and picking it writes 12 into the slot, then calls Bryton's code with an unknown category, which writes nothing and
+saves the slot as it is. Everything else runs the stock code.
 
 ## Battery percentage
 
