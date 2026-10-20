@@ -1,9 +1,14 @@
 # Rider S510 mods
 
-Unofficial firmware improvements for the **Bryton Rider S510** GPS bike computer, mostly for structured
-workouts. You build them **in your browser** from Bryton's own firmware, copy two files to the unit, done.
+Unofficial firmware improvements for the **Bryton Rider S510** GPS bike computer: **media buttons for your
+phone** right on the unit, and a better structured-workout screen. You build them **in your browser** from
+Bryton's own firmware, copy two files to the unit, done.
 
 **→ [Open the web builder](https://taladjidi.github.io/bryton-S510-mods/)**
+
+| Media buttons for your phone | Switched on in Quick Status |
+|:---:|:---:|
+| <img src="site/img/media.jpg" width="260" alt="Media box: previous, play/pause, next, volume down and up"> | <img src="site/img/multimedia-control.jpg" width="260" alt="Multimedia Control in Quick Status"> |
 
 | Stock next-step popup | Patched: strip | Tap: instant | 3 s | 10 s | 30 s |
 |:---:|:---:|:---:|:---:|:---:|:---:|
@@ -21,10 +26,6 @@ workouts. You build them **in your browser** from Bryton's own firmware, copy tw
 | **Media buttons for your phone** in the overview (the panel a tap on the ride screen opens): previous, play/pause, next, volume down/up, for whatever app is playing. Turn on **Multimedia Control** in Quick Status. **Re-pair once after installing** (see below). **Only tested with an iPhone so far.** | `P7` |
 
 `P1` `P3` `P4` `P5` together are the **workout** set, the default in the web builder; tick `P6` and `P7` to add them.
-
-| Quick Status: Multimedia Control | Media box (`P7`) |
-|:---:|:---:|
-| <img src="site/img/multimedia-control.jpg" width="130" alt="Multimedia Control in Quick Status"> | <img src="site/img/media.jpg" width="130" alt="Media box"> |
 
 > [!IMPORTANT]
 > **`P7` needs the phone to be paired again once.** After installing, on the phone open the Bluetooth settings,
