@@ -1,0 +1,9 @@
+title:  Di2 hood buttons get 10 actions (Previous Page, Quick Status, Map, Home, ...), plus media keys with P7 [tested on the unit]
+desc:   Settings > bike > sensors > Di2 button setup offers the full ESS action list instead of 4 button copies; presses run the stock ESS action handler
+source: patches/P12-di2-button-actions.c, docs/how-it-works.md (P12)
+0xd011537a  sha256:bc9474c4dfdedcbb  c5f241fe  # SettingsRemoteSetupOption__Init: "bl set 5 items" -> 11 items (16 with P7)
+0xd0288d2a  sha256:042e618ce9dacde3  52f19bb9  # Sensor_Di2SetShifterKeyMap entry -> di2_keymap
+0xd0288d8c  sha256:0c9665af505b7b9f  52f176b9  # Sensor_Di2Poll entry -> di2_poll
+0xd01156fc  sha256:86fcd344615e1f8a  c5f2a0bc  # SettingsRemoteSetupOption_GetOptionCaption entry -> ESS + media captions
+0xd0115030  sha256:ef637ee1290b3401  c5f2eebf  # SettingsRemoteSetup row value: "cmp r2,#4; bhi" -> option_caption of r2
+0xd03db000  sha256:a9347ccf02030f25  10b500f00bf80146bde8104052f505bf114600f015f801463af524b805490b20054b0a689a4204d14968044a914208bf10207047346c3dd0feb501210df117020a2901d85cf58cbb0f2906d8044800eb810050f82c0c2af585bc0020704700bf18b13dd0044ac17d9170017e1170417ed170807e5070704754fd002410b50d4cadf615fe30b104f11800a1f653fa08b1adf61afe2078052818bf10bd064c10210c22207800f00af8607811210e22bde8104003e048fd00249905012410b5124bcc5ca0421fd004095854601e01281ad89818204410f8010ca8b10a2803d8bde81040aef67bb80f280dd80849084b0a689a4208d14968074a914204d10b38bde81040fbf797bd10bd48fd0024346c3dd0feb501210df117022cb13dd037b13dd042b13dd051b13dd05ab13dd0506c61792f5061757365004e65787420547261636b0050726576696f757320547261636b00566f6c756d65202b00566f6c756d65202d00  # code: P12-di2-button-actions.c (355 B, ends 0xd03db163)

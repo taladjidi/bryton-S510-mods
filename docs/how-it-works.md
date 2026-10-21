@@ -269,6 +269,33 @@ other functions through a `b.w` at their first instruction: for the new item the
 (`DFA a1` with `P9`), and picking it writes 12 into the slot, then calls Bryton's code with an unknown category, which writes nothing and
 saves the slot as it is. Everything else runs the stock code.
 
+## Di2 hood buttons (P12)
+
+Open the paired Di2 in the sensor list, then **Sensor Details > Remote Setup**. Each of the four presses (left /
+right, single / long) gets one action from the list. Sensor Details also shows the Di2 battery level.
+
+<p>
+<img src="img/p12-1-di2-sensor.jpg" width="200" alt="Di2 sensor page: Status, Name, Sensor Details, Remove">
+<img src="img/p12-2-sensor-details.jpg" width="200" alt="Sensor Details: battery 60%, Front Gear, Rear Gear, Remote Setup">
+<img src="img/p12-3-remote-setup.jpg" width="200" alt="Remote Setup: Left Single Press Previous Track, Right Single Press Next Track, Left Long Press None">
+</p>
+
+Stock firmware offers only None, Lap, Start/Stop, Lock/Unlock and Next Page for Di2 (copies of the unit's buttons),
+while the SRAM / ANT+ Shifting remotes (ESS) get a longer list with its own handler (`Sensor_EShiftHandleKeyAction`,
+`0xd02891dc`): Lap, Start/Stop, Lock/Unlock, Next Page, Previous Page, Quick Status, Map, First Data Page, Home
+Page, Latest Notification. Nothing in that handler depends on the ESS connection, and the sensor ini keeps each Di2
+choice as a plain number (`leftpress`, `rightpress`, `leftlongpress`, `rightlongpress`). `P12`:
+
+- shows the ESS list in the Di2 option menu (5 -> 11 items) and on the four rows;
+- keeps the chosen number as is (stock: turned into one of 4 key codes) and, when a press arrives (Di2 page 4: high
+  nibble 1 single / 2 long, low nibble a press counter), hands it to the ESS handler;
+- with `P7` installed (checked at run time: `P7`'s code at its fixed address), adds Play/Pause, Next Track, Previous
+  Track, Volume + and Volume -, sent to the phone through `P7`'s media keys. Without `P7` the list stays at 10.
+
+The media keys answer faster than the screen actions and do not beep: they go straight to the phone over
+Bluetooth, while a screen action goes through Bryton's UI event queue and screen change; Previous Page to Latest
+Notification also beep (when key tones are on), as they do for the SRAM remotes. Double presses are not decoded (stock neither).
+
 ## Reminders (stock, no patch)
 
 `Remind_CheckReminders` (`0xd026ae74`) runs once a second while recording. Each of the six reminders

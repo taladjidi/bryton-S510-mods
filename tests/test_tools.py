@@ -173,6 +173,40 @@ class Tools(unittest.TestCase):
             self.assertAlmostEqual(got, ref(x), places=3)
             self.assertAlmostEqual(got, expect, delta=0.15)
 
+    def test_di2_presses_run_their_action_once(self):
+        """P12: a new Di2 page 4 byte runs that side's short / long action once; repeats, other kinds, None do not;
+        11..15 go to P7's media keys (bit = action - 11)."""
+        if not shutil.which('clang'):
+            self.skipTest('clang not installed')
+        drv = os.path.join(self.tmp, 'di2.c')
+        with open(drv, 'w') as f:
+            f.write('#include <stdio.h>\n#include <stdint.h>\n'
+                    'uint8_t di2[0x20], right, left;\n'
+                    '#define DI2 di2\n#define DI2_TIMER 0\n#define RIGHT_PAGE right\n#define LEFT_PAGE left\n'
+                    '#define P7_INSTALLED 1\n'
+                    f'#include "{os.path.join(build.PATCHES, "P12-di2-button-actions.c")}"\n'
+                    'int Sensor_Di2IsEnabledAndOpen(void) { return 0; }\n'
+                    'int Util_IntervalElapsed(void *t) { return 0; }\n'
+                    'void Sensor_Di2ReadData(void) {}\n'
+                    'void Sensor_EShiftHandleKeyAction(int a) { printf("%d ", a); }\n'
+                    'uint32_t media_remote_press(unsigned b) { printf("m%u ", b); return 0; }\n'
+                    'void *SettingsESSRemoteSetupOption_GetOptionCaption(void *t, unsigned i) { return 0; }\n'
+                    'void *EwNewStringAnsi(const char *s) { return (void *)s; }\n'
+                    'int main(void) { uint8_t cfg[0x20] = {0};\n'
+                    '  cfg[0x17] = 5; cfg[0x18] = 7; cfg[0x19] = 0; cfg[0x1a] = 10; di2_keymap(cfg);\n'
+                    '  di2[0] = 5;\n'
+                    '  right = 0x11; di2_poll(); di2_poll();\n'          # R short once: 7
+                    '  right = 0x22; di2_poll();\n'                      # R long: 10
+                    '  left = 0x13; di2_poll();\n'                       # L short: 5
+                    '  left = 0x24; di2_poll();\n'                       # L long = None: nothing
+                    '  cfg[0x19] = 13; di2_keymap(cfg); left = 0x25; di2_poll();\n'   # L long = Previous Track: m2
+                    '  right = 0x35; di2_poll();\n'                      # unknown kind: nothing
+                    '  di2[0] = 3; right = 0x16; di2_poll();\n'          # channel not open: nothing
+                    '  di2[0] = 5; right = 0x17; di2_poll(); }\n')       # R short again: 7
+        subprocess.run(['clang', '-O1', '-w', drv, '-o', drv[:-2]], check=True)
+        out = subprocess.run([drv[:-2]], capture_output=True, text=True, check=True).stdout
+        self.assertEqual(out.split(), ['7', '10', '5', 'm2', '7'])
+
     def test_title_blocks_survive_the_string_cache(self):
         """P9's field title: the block must be a chain of entries from its start, else Embedded Wizard's
         EwDisposeStrings (0x317a), which walks it with p += *p to find an entry in use, frees it while shown."""
