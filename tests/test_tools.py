@@ -175,7 +175,8 @@ class Tools(unittest.TestCase):
 
     def test_di2_presses_run_their_action_once(self):
         """P12: a new Di2 page 4 byte runs that side's short / long action once; repeats, other kinds, None do not;
-        11..15 go to P7's media keys (bit = action - 11); one beep for all but Lap and 5..10 (they beep themselves)."""
+        11..15 go to P7's media keys (bit = action - 11); one beep for all but Lap and 5..10 (they beep themselves).
+        A changed byte from the ANT side wakes sensor_wait once; it handles the press at once, then sleeps on."""
         if not shutil.which('clang'):
             self.skipTest('clang not installed')
         drv = os.path.join(self.tmp, 'di2.c')
@@ -184,6 +185,7 @@ class Tools(unittest.TestCase):
                     'uint8_t di2[0x20], right, left;\n'
                     '#define DI2 di2\n#define DI2_TIMER 0\n#define RIGHT_PAGE right\n#define LEFT_PAGE left\n'
                     '#define P7_INSTALLED 1\nuint8_t tone = 1;\n#define KEY_TONE tone\n'
+                    'void *wake_ptr; uint32_t wake_chk;\n#define WAKE wake_ptr\n#define WAKE_CHECK wake_chk\n'
                     f'#include "{os.path.join(build.PATCHES, "P12-di2-button-actions.c")}"\n'
                     'int Sensor_Di2IsEnabledAndOpen(void) { return 0; }\n'
                     'int Util_IntervalElapsed(void *t) { return 0; }\n'
@@ -194,6 +196,16 @@ class Tools(unittest.TestCase):
                     'void *EwNewStringAnsi(const char *s) { return (void *)s; }\n'
                     'void Ui_BeepIfEnabled(int p) { printf("b "); }\n'
                     'int Ui_PostEvent(int e, int v) { printf("e%d,%d ", e, v); return 0; }\n'
+                    'int box = 0, mbox_obj; uint32_t now = 0;\n'
+                    'void Vector_InitLock(void) {}\n'
+                    'void *OSMboxCreate(void *m) { return &mbox_obj; }\n'
+                    'uint8_t OSMboxPost(void *mb, void *m) { if (box) return 0x14; box = 1; printf("w "); return 0; }\n'
+                    'void *OSMboxPend(void *mb, uint16_t t, uint8_t *err) {\n'
+                    '  if (box) { box = 0; *err = 0; return (void *)1; }\n'
+                    '  now += t; *err = 10; printf("t%u ", t); return 0; }\n'
+                    'uint32_t OSTimeGet(void) { return now; }\n'
+                    'uint8_t OSTimeDlyHMSM(int h, int m, int s, unsigned ms) { printf("d%u ", ms); return 0; }\n'
+                    'static void ant(int r, int l) { uint8_t m[8] = {0, 0x4f, 6, 4, r, l}; di2_ant(m); }\n'
                     'int main(void) { uint8_t cfg[0x20] = {0};\n'
                     '  cfg[0x17] = 5; cfg[0x18] = 7; cfg[0x19] = 0; cfg[0x1a] = 10; di2_keymap(cfg);\n'
                     '  di2[0] = 5;\n'
@@ -206,10 +218,17 @@ class Tools(unittest.TestCase):
                     '  di2[0] = 3; right = 0x16; di2_poll();\n'          # channel not open: nothing
                     '  di2[0] = 5; right = 0x17; di2_poll();\n'          # R short again: 7
                     '  cfg[0x18] = 4; di2_keymap(cfg); right = 0x18; di2_poll();\n'   # Next Page: event 5,3 + beep
-                    '  cfg[0x18] = 1; di2_keymap(cfg); right = 0x19; di2_poll(); }\n')   # Lap: own tone, no beep
+                    '  cfg[0x18] = 1; di2_keymap(cfg); right = 0x19; di2_poll();\n'   # Lap: own tone, no beep
+                    '  printf("| "); wake_chk = 1; sensor_wait(0, 0, 0, 100);\n'     # no valid mailbox: plain sleep
+                    '  ant(0x1a, 0); sensor_wait(0, 0, 0, 100);\n'                   # and no wake-up from the ANT side
+                    '  wake_init(); printf("| ");\n'
+                    '  cfg[0x18] = 4; di2_keymap(cfg); ant(0x1b, 0); ant(0x1b, 0);\n' # one press, repeated: one wake-up
+                    '  sensor_wait(0, 0, 0, 100);\n'                                 # Next Page at once, then the rest
+                    '  sensor_wait(0, 0, 0, 0); }\n')                                # 0 ms: no wait (0 = forever)
         subprocess.run(['clang', '-O1', '-w', drv, '-o', drv[:-2]], check=True)
         out = subprocess.run([drv[:-2]], capture_output=True, text=True, check=True).stdout
-        self.assertEqual(out.split(), ['7', '10', '5', 'm2', 'b', '7', 'e5,3', 'b', '1'])
+        self.assertEqual(out.split(), ['7', '10', '5', 'm2', 'b', '7', 'e5,3', 'b', '1',
+                                       '|', 'd100', 'd100', '|', 'w', 'e5,3', 'b', 't100'])
 
     def test_title_blocks_survive_the_string_cache(self):
         """P9's field title: the block must be a chain of entries from its start, else Embedded Wizard's

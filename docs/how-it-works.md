@@ -300,6 +300,17 @@ before it asks for the page change, the event reaches the screen in 1 ms (debug 
 works on ride pages only, not in menus.
 Double presses are not decoded (stock neither).
 
+A Di2 press also waited for the sensor task: `sensor_task` (`0xd0289670`) polls every sensor driver, the Di2 one
+included, then sleeps 100 ms, so a press that the ANT task had already stored waited 0 to 100 ms (70 to 111 ms in
+the debug log). `P12` gives that sleep a wake-up: the ANT handler (`Ant_Di2_OnAntEvent`, page 4) still only stores
+the two button bytes, and posts an RTOS mailbox when one of them changes; the sensor task's 100 ms sleep becomes a
+wait on that mailbox with the same timeout. A press wakes it at once, it runs the Di2 press check, then sleeps the
+rest of its 100 ms, so the other drivers keep their cadence. The actions still run in the sensor task, as in stock,
+and the ANT task, whose stack is small and which serves every ANT sensor, does nothing more than store and post.
+Measured on the unit (a local tracing aid): Di2 message received to page event posted 0 to 3.4 ms, the screen task
+starts at once. What is left: the Di2 sends its button page about every 205 ms (its radio rate, not the unit's), and
+drawing the new page takes 140 to 310 ms.
+
 ## Snappier UI (P13, P14)
 
 Debug log timings (`D2`, a local timing aid) of a press of the unit's page button: the key task took the key, then
