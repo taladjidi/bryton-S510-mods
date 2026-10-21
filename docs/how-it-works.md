@@ -300,6 +300,26 @@ before it asks for the page change, the event reaches the screen in 1 ms (debug 
 works on ride pages only, not in menus.
 Double presses are not decoded (stock neither).
 
+## Snappier UI (P13, P14)
+
+Debug log timings (`D2`, a local timing aid) of a press of the unit's page button: the key task took the key, then
+spent 287 to 293 ms before asking for the next page (133 to 151 ms on another day, with no GPS fix and less map
+work); the screen then got the event in 1 ms. Two causes:
+
+- **The debug UART.** Every `printf` of the firmware (about 600 call sites) ends in `dbg_uart_putc` (ITCM `0x9cbc`,
+  copied at boot from the image at `0xd0351a68`): write the character to the debug UART, wait until it has left the
+  pin (~115200 baud, ~87 µs), then copy it into the 64 KB RAM buffer that the debug log saves. One page change prints
+  about 1.2 kB of traces, about 100 ms of waiting in whatever task prints. `P13` branches over the UART write and the
+  wait (2 bytes); the RAM copy, hence the saved debug log, stays.
+- **The key click comes first.** `HRApp_ProcessKeyMessage` runs the key listeners (`Ui_DispatchKeyListeners`), whose
+  main one sleeps 50 ms and plays the 80 ms key beep, blocking the key task, and only then `Ride_OnKeyMessage`, which
+  posts the next page event. Both are RTOS sleeps, so they stretch when busier tasks hold the CPU. `P14` swaps the
+  two for the page key only: the page changes first, the click plays during the redraw (as `P12`'s Di2 Next Page).
+  Other keys keep the stock order (Lap: click, then the lap tone).
+
+With both: key to page change 0 to 1 ms (53 ms once). What is left is drawing the new page; on map pages each page
+change sets the map view up again.
+
 ## Reminders (stock, no patch)
 
 `Remind_CheckReminders` (`0xd026ae74`) runs once a second while recording. Each of the six reminders
