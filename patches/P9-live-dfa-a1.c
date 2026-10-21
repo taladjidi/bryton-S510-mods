@@ -27,7 +27,8 @@
 // index 0x78); the block pointer is changed to a new Embedded Wizard string block below with "DFA a1" at the same
 // index.
 //
-// Build: python3 tools/asm2patch.py patches/P9-live-dfa-a1.c
+// Build: { python3 tools/asm2patch.py patches/P9-live-dfa-a1.c; python3 tools/asm2patch.py patches/P9-field-menu.c; }
+// (P9-field-menu.c, formerly P11, adds the field to the unit's field menus; both make the one P9 patch.)
 // @cave 0xd03d8000          after the stock image (build.py grows the image, see GROW_END)
 // @word 0xd03b36e8 dfa_bind  field table, ID 12 ("Non") -> dfa_bind
 // @word 0xd0054208 dfa_title_block  field 12 title: string block of its only translation -> "DFA a1"

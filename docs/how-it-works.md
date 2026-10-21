@@ -257,17 +257,18 @@ filler entry of spaces; `tests/test_tools.py` walks the block the same way.
 Bryton's own W' balance field (180, last item of the Power category) is left as it is: its code (`0xd0280840`)
 only runs once the Bryton app has sent a W' and a CP.
 
-## DFA a1 in the field menus (P11)
+## DFA a1 in the field menus (P9)
 
 Both field menus (long press on a field during a ride, and Settings > data fields) work from tables in code, the
 same in both: the category picks the item count (a compare chain: `0xd01797cc` and `0xd011fade`), an item's name
 is a switch on (category, item) that returns a title object (`0xd0178520`, `0xd011fd98`), and choosing item i writes
 the field ID of (category, i), another switch, into the page's grid slot and saves the page to
-`System/BikeNProfile.ini` (`0xd0178e78`, `0xd01206ec`). Field 12 is in no category. `P11` adds one item at
+`System/BikeNProfile.ini` (`0xd0178e78`, `0xd01206ec`). Field 12 is in no category. `P9` (its `P9-field-menu.c`
+part, formerly `P11`) adds one item at
 the end of Heart Rate (18 -> 19 items: field 12, DFA a1), one immediate in each count function, and enters the four
 other functions through a `b.w` at their first instruction: for the new item the name is field 12's title
-(`DFA a1` with `P9`), and picking it writes 12 into the slot, then calls Bryton's code with an unknown category, which writes nothing and
-saves the slot as it is. Everything else runs the stock code.
+(`DFA a1`), and picking it writes 12 into the slot, then calls Bryton's code with an unknown category, which writes
+nothing and saves the slot as it is. Everything else runs the stock code.
 
 ## Di2 hood buttons (P12)
 
@@ -309,9 +310,9 @@ rest of its 100 ms, so the other drivers keep their cadence. The actions still r
 and the ANT task, whose stack is small and which serves every ANT sensor, does nothing more than store and post.
 Measured on the unit (a local tracing aid): Di2 message received to page event posted 0 to 3.4 ms, the screen task
 starts at once. What is left: the Di2 sends its button page about every 205 ms (its radio rate, not the unit's), and
-drawing the new page takes 140 to 310 ms.
+drawing the new page (see [Snappier UI](#snappier-ui-p13-p14-p17)).
 
-## Snappier UI (P13, P14)
+## Snappier UI (P13, P14, P17)
 
 Debug log timings (`D2`, a local timing aid) of a press of the unit's page button: the key task took the key, then
 spent 287 to 293 ms before asking for the next page (133 to 151 ms on another day, with no GPS fix and less map
@@ -321,15 +322,38 @@ work); the screen then got the event in 1 ms. Two causes:
   copied at boot from the image at `0xd0351a68`): write the character to the debug UART, wait until it has left the
   pin (~115200 baud, ~87 µs), then copy it into the 64 KB RAM buffer that the debug log saves. One page change prints
   about 1.2 kB of traces, about 100 ms of waiting in whatever task prints. `P13` branches over the UART write and the
-  wait (2 bytes); the RAM copy, hence the saved debug log, stays.
+  wait (2 bytes); the RAM copy, hence the saved debug log, stays. The Embedded Wizard library prints through a second
+  copy of that routine (`Dbg_UartPutcWithLogBuf`, ITCM `0x1610`, used by `EwPrint`); `P13` patches it the same way.
 - **The key click comes first.** `HRApp_ProcessKeyMessage` runs the key listeners (`Ui_DispatchKeyListeners`), whose
   main one sleeps 50 ms and plays the 80 ms key beep, blocking the key task, and only then `Ride_OnKeyMessage`, which
   posts the next page event. Both are RTOS sleeps, so they stretch when busier tasks hold the CPU. `P14` swaps the
   two for the page key only: the page changes first, the click plays during the redraw (as `P12`'s Di2 Next Page).
   Other keys keep the stock order (Lap: click, then the lap tone).
 
-With both: key to page change 0 to 1 ms (53 ms once). What is left is drawing the new page; on map pages each page
-change sets the map view up again.
+With both: key to page change 0 to 1 ms (53 ms once). What is left is drawing the new page. To see where that time
+goes, a local tracing aid sampled the screen task (Embedded Wizard, priority 12) once per millisecond:
+
+- **50 ms of spinning after every frame (31 % of the screen task's time).** Each frame ends in
+  `Lcd_FlushAndWait` (`0xd02434f0`): send the 150 KB frame to the panel, then `HAL_Delay(50)`, a busy loop. While it
+  spins, no lower priority task runs: the Nordic task (Bluetooth and the ANT messages, Di2 included), map tiles,
+  routing. `P13` makes it sleep the same 50 ms (`OSTimeDly`), only in the screen task once the RTOS runs.
+- **Every page change builds a new page.** Next / Previous Page drop the shown page and build a new one (a data page
+  is a `Metergrid13`: 10 fields, an embedded map, timers, touch handlers); the garbage collector then sweeps the old
+  one (about a fifth of the screen task's time). `P17` keeps one page object per page (data pages, the map page per
+  map display mode, the free-climb page) and shows it again. A hidden page reacts to nothing: its 1 s refresh timer and
+  its own event handlers are off, its links back to the ride screen are cleared and it is locked against the
+  collector; shown again, they come back and its refresh runs once, so the values are current at once. Any rebuild
+  of the ride screen (Settings, layout edits, profile change) starts from an empty cache, so a changed layout is
+  always built fresh. A first version kept the ride screen itself alive through its hidden pages; the orphan got the
+  "settings changed" event and the unit restarted (flash #36), hence the cleared links.
+- **Previous Page from a remote rebuilt the whole ride screen.** Di2 / ESS Previous Page goes to the application's
+  handler (event `0xa78`, value 6), which dismissed every dialog and built a new ride screen (all its dialogs and
+  the turn-info map): 2 to 3 times the cost of Next Page. With the ride screen alone on screen, `P17` calls its own
+  previous-page method instead, the one a swipe uses; otherwise the stock path runs.
+
+Measured (8 page changes, screen task CPU per change / first frame on screen after the page event): stock with
+`P13`'s frame part, Next Page 74 to 217 ms / 43 to 291 ms, Previous Page 336 to 500 ms / 310 to 438 ms; with `P17`,
+both 32 to 141 ms / 15 to 67 ms.
 
 ## Reminders (stock, no patch)
 

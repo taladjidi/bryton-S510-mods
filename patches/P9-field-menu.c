@@ -1,6 +1,6 @@
-// P11 (tested on the unit, both menus): "DFA a1" (field 12, P9) can be picked on the unit, as the last item of the Heart
-// Rate category, both in the ride-screen field menu (long press on a field) and in Settings > data fields. Needs P9
-// (without it the item is called "Non" and shows "--").
+// P9, field menu part (was P11; tested on the unit, both menus): "DFA a1" (field 12) can be picked on the unit, as the last item of the Heart
+// Rate category, both in the ride-screen field menu (long press on a field) and in Settings > data fields. The field
+// itself is P9-live-dfa-a1.c; both sources make the one P9 patch.
 //
 // How the menus work (both menus have the same tables, in code): a category is chosen, the item count comes from
 // a compare chain (Heart Rate: 18 items), each item's name from a switch on (category, item) returning a title
@@ -12,7 +12,7 @@
 //   the page: with an unknown category (0x17) it writes nothing and saves the slot as it is.
 // The four functions are entered through a b.w at their first instruction; the wrapper re-runs that instruction.
 //
-// Build: python3 tools/asm2patch.py patches/P11-dfa-in-field-menu.c
+// Build: { python3 tools/asm2patch.py patches/P9-live-dfa-a1.c; python3 tools/asm2patch.py patches/P9-field-menu.c; }
 // @cave 0xd03da000          after the stock image (build.py grows the image, see GROW_END)
 // @jump 0xd0178e78 map_hook  MeterSetDataField_MapItemToFieldId entry (push.w) -> map_hook
 // @jump 0xd01206ec assign_hook  Page_AssignGridFieldType entry (push.w) -> assign_hook

@@ -1,4 +1,0 @@
-title:  Snappier UI: the firmware's debug messages no longer wait for the serial port
-desc:   every debug message character (about 1.2 kB per page change) waited ~87 us for the internal debug UART; now only copied to the RAM log buffer (the saved debug log stays)
-source: docs/how-it-works.md#snappier-ui-p13-p14; dbg_uart_putc (ITCM 0x9cbc, image copy 0xd0351a68 + 0x9cbc)
-0xd035b728  sha256:07c7f6d710939aeb  04e0  # dbg_uart_putc: ldr r2,[r1] (UART write, wait for TC) -> b 0x9ccc (RAM ring only)

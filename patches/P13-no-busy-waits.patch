@@ -1,0 +1,7 @@
+title:  Snappier UI: no busy waits (debug serial port, and 50 ms after every frame)
+desc:   debug messages no longer wait ~87 us per character for an internal serial port nobody reads (about 1.2 kB per page change); after each frame the screen task sleeps its 50 ms instead of spinning, so Bluetooth / ANT (Di2) and map work run meanwhile
+source: docs/how-it-works.md#snappier-ui-p13-p14-p17; patches/P13-frame-wait-sleeps.c; debug UART: dbg_uart_putc (ITCM 0x9cbc) and Dbg_UartPutcWithLogBuf (ITCM 0x1610, the Embedded Wizard print path); image copy = ITCM + 0xd0351a68
+0xd035b728  sha256:07c7f6d710939aeb  04e0  # dbg_uart_putc: ldr r2,[r1] (UART write, wait for TC) -> b 0x9ccc (RAM ring only)
+0xd035307a  sha256:75a3e9997fdb48f1  04e0  # Dbg_UartPutcWithLogBuf: ldr r1,=uart (UART write, wait for TC) -> b 0x161e (RAM ring only)
+0xd02434fa  sha256:b95014678b256f7e  9cf181fd  # Lcd_FlushAndWait: bl HAL_Delay_veneer(50) -> frame_wait(50)
+0xd03e0000  sha256:9d908ecfb6b256de  04490a780c2a03d1096a09b12cf61cbea9f532bb90ce0330  # code: P13-frame-wait-sleeps.c (24 B, ends 0xd03e0018)
