@@ -193,6 +193,7 @@ class Tools(unittest.TestCase):
                     'void *SettingsESSRemoteSetupOption_GetOptionCaption(void *t, unsigned i) { return 0; }\n'
                     'void *EwNewStringAnsi(const char *s) { return (void *)s; }\n'
                     'void Ui_BeepIfEnabled(int p) { printf("b "); }\n'
+                    'int Ui_PostEvent(int e, int v) { printf("e%d,%d ", e, v); return 0; }\n'
                     'int main(void) { uint8_t cfg[0x20] = {0};\n'
                     '  cfg[0x17] = 5; cfg[0x18] = 7; cfg[0x19] = 0; cfg[0x1a] = 10; di2_keymap(cfg);\n'
                     '  di2[0] = 5;\n'
@@ -204,11 +205,11 @@ class Tools(unittest.TestCase):
                     '  right = 0x35; di2_poll();\n'                      # unknown kind: nothing
                     '  di2[0] = 3; right = 0x16; di2_poll();\n'          # channel not open: nothing
                     '  di2[0] = 5; right = 0x17; di2_poll();\n'          # R short again: 7
-                    '  cfg[0x18] = 4; di2_keymap(cfg); right = 0x18; di2_poll();\n'   # Next Page: 4 + beep
+                    '  cfg[0x18] = 4; di2_keymap(cfg); right = 0x18; di2_poll();\n'   # Next Page: event 5,3 + beep
                     '  cfg[0x18] = 1; di2_keymap(cfg); right = 0x19; di2_poll(); }\n')   # Lap: own tone, no beep
         subprocess.run(['clang', '-O1', '-w', drv, '-o', drv[:-2]], check=True)
         out = subprocess.run([drv[:-2]], capture_output=True, text=True, check=True).stdout
-        self.assertEqual(out.split(), ['7', '10', '5', 'm2', 'b', '7', '4', 'b', '1'])
+        self.assertEqual(out.split(), ['7', '10', '5', 'm2', 'b', '7', 'e5,3', 'b', '1'])
 
     def test_title_blocks_survive_the_string_cache(self):
         """P9's field title: the block must be a chain of entries from its start, else Embedded Wizard's

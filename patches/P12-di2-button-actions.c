@@ -31,6 +31,7 @@
 // @sym EwNewStringAnsi 0xd0105964
 // @sym media_remote_press 0xd03d6c34       P7's function (its cave, fixed by P7's .patch bytes)
 // @sym Ui_BeepIfEnabled 0xd025528e
+// @sym Ui_PostEvent 0xd01f1f5c
 #include <stdint.h>
 
 extern int Sensor_Di2IsEnabledAndOpen(void);
@@ -41,12 +42,14 @@ extern void *SettingsESSRemoteSetupOption_GetOptionCaption(void *t, unsigned i);
 extern void *EwNewStringAnsi(const char *s);
 extern uint32_t media_remote_press(unsigned bit);
 extern void Ui_BeepIfEnabled(int pattern);
+extern int Ui_PostEvent(int event, int value);
 
 #ifndef P7_INSTALLED   // P7's first 8 bytes at media_remote_press (push {r1-r7,lr}; movs r1,#1; ...): else zeros
 #define P7_INSTALLED (((const volatile uint32_t *)0xd03d6c34)[0] == 0x2101b5fe && \
                       ((const volatile uint32_t *)0xd03d6c34)[1] == 0x0217f10d)
 #endif
 #define MEDIA_FIRST 11                                // 11..15: media_remote_press bits 0..4
+#define NEXT_PAGE 4
 
 #ifndef DI2                                    // (tests/test_tools.py builds this for the host with its own)
 #define DI2 ((volatile uint8_t *)0x2400fd48)   // driver state: +0 state (5 = open), +0xc..0xf actions, +0x10/0x11 last bytes
@@ -81,9 +84,14 @@ void *option_caption(void *t, unsigned i)
 
 // Every action gets the ESS handler's short beep (pattern 2, when key tones are on): it beeps for 5..10 itself;
 // Lap has its own lap tone (Ride_HandleLapKey). The beep blocks this task ~80 ms, so it comes after the action.
+// Next Page posts the ride screen's next-page event itself, as Ride_OnKeyMessage does for the page key: the key
+// queue on the way costs ~190 ms (debug log), Previous Page (event 0x65) arrives in 1-2 ms. Ride pages only, like
+// Previous Page.
 static void run(unsigned action)
 {
-    if (action < MEDIA_FIRST) {
+    if (action == NEXT_PAGE)
+        Ui_PostEvent(5, 3);
+    else if (action < MEDIA_FIRST) {
         Sensor_EShiftHandleKeyAction((int)action);
         if (action >= 5 || action == 1)
             return;

@@ -293,7 +293,11 @@ choice as a plain number (`leftpress`, `rightpress`, `leftlongpress`, `rightlong
   Track, Volume + and Volume -, sent to the phone through `P7`'s media keys. Without `P7` the list stays at 10.
 
 Every action beeps once when key tones are on (Bryton's short remote beep; Lap keeps its own lap tone). The media
-keys answer faster than the page changes, even on a single press: being looked into (timing in the debug log).
+keys answer faster than the page changes, even on a single press: drawing the new page (on map pages, a full map
+setup) takes most of the time, for the unit's own page button too. Next Page goes straight to the ride screen's
+next page event, as Previous Page does, instead of through the key queue: the unit's key handling spends about 290 ms
+before it asks for the page change, the event reaches the screen in 1 ms (debug log timings). Like Previous Page, it
+works on ride pages only, not in menus.
 Double presses are not decoded (stock neither).
 
 ## Reminders (stock, no patch)
