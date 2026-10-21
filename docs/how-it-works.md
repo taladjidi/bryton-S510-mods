@@ -292,9 +292,9 @@ choice as a plain number (`leftpress`, `rightpress`, `leftlongpress`, `rightlong
 - with `P7` installed (checked at run time: `P7`'s code at its fixed address), adds Play/Pause, Next Track, Previous
   Track, Volume + and Volume -, sent to the phone through `P7`'s media keys. Without `P7` the list stays at 10.
 
-The media keys answer faster than the screen actions and do not beep: they go straight to the phone over
-Bluetooth, while a screen action goes through Bryton's UI event queue and screen change; Previous Page to Latest
-Notification also beep (when key tones are on), as they do for the SRAM remotes. Double presses are not decoded (stock neither).
+Every action beeps once when key tones are on (Bryton's short remote beep; Lap keeps its own lap tone). The media
+keys answer faster than the page changes, even on a single press: being looked into (timing in the debug log).
+Double presses are not decoded (stock neither).
 
 ## Reminders (stock, no patch)
 

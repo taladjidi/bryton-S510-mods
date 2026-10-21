@@ -30,6 +30,7 @@
 // @sym row_caption_done 0xd0115064
 // @sym EwNewStringAnsi 0xd0105964
 // @sym media_remote_press 0xd03d6c34       P7's function (its cave, fixed by P7's .patch bytes)
+// @sym Ui_BeepIfEnabled 0xd025528e
 #include <stdint.h>
 
 extern int Sensor_Di2IsEnabledAndOpen(void);
@@ -39,6 +40,7 @@ extern void Sensor_EShiftHandleKeyAction(int action);
 extern void *SettingsESSRemoteSetupOption_GetOptionCaption(void *t, unsigned i);
 extern void *EwNewStringAnsi(const char *s);
 extern uint32_t media_remote_press(unsigned bit);
+extern void Ui_BeepIfEnabled(int pattern);
 
 #ifndef P7_INSTALLED   // P7's first 8 bytes at media_remote_press (push {r1-r7,lr}; movs r1,#1; ...): else zeros
 #define P7_INSTALLED (((const volatile uint32_t *)0xd03d6c34)[0] == 0x2101b5fe && \
@@ -51,6 +53,7 @@ extern uint32_t media_remote_press(unsigned bit);
 #define DI2_TIMER ((void *)0x2400fd60)
 #define RIGHT_PAGE (*(volatile uint8_t *)0x24010599)   // Di2 page 4: high nibble 1 short / 2 long, low nibble counter
 #define LEFT_PAGE (*(volatile uint8_t *)0x2401059a)
+#define KEY_TONE (*(volatile uint8_t *)0x2406cadc)     // the ESS handler's beep condition
 #endif
 #define R_SHORT 0xc                                   // then R long, L short, L long
 #define L_SHORT 0xe
@@ -76,12 +79,20 @@ void *option_caption(void *t, unsigned i)
     return i < MEDIA_FIRST + 5 ? EwNewStringAnsi(media[i - MEDIA_FIRST]) : 0;
 }
 
+// Every action gets the ESS handler's short beep (pattern 2, when key tones are on): it beeps for 5..10 itself;
+// Lap has its own lap tone (Ride_HandleLapKey). The beep blocks this task ~80 ms, so it comes after the action.
 static void run(unsigned action)
 {
-    if (action < MEDIA_FIRST)
+    if (action < MEDIA_FIRST) {
         Sensor_EShiftHandleKeyAction((int)action);
-    else if (action < MEDIA_FIRST + 5 && P7_INSTALLED)
+        if (action >= 5 || action == 1)
+            return;
+    } else if (action < MEDIA_FIRST + 5 && P7_INSTALLED)
         media_remote_press(action - MEDIA_FIRST);
+    else
+        return;
+    if (KEY_TONE)
+        Ui_BeepIfEnabled(2);
 }
 
 void di2_keymap(const uint8_t *cfg)
