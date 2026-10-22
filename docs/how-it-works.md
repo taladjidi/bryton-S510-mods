@@ -190,6 +190,32 @@ one place the Quick Status pages read it). The firmware image only holds code an
 lives elsewhere in RAM), so the one value `P7` keeps, the key report's handle, is stored in RTC backup register
 20, which Bryton does not use.
 
+## How a ride is saved
+
+The ride file is written while riding, not at the end. At the start (`Log_StateMachineStep`, `0xd021c8a0`)
+the firmware opens `\Activities\tmp.fit` (plus `tmp.sum` / `tmp.csum` summaries) and writes the record
+definitions; then each second's record goes straight to the file (`HRLog_Sensor_Point`). About every minute (60 samples)
+`Fit_SaveTempUpdateData` (`0xd02176d6`) flushes the three files and saves a 452-byte recovery header (file sizes
+and CRCs, ride totals, timer, last positions) to `\System\tmpNEW.fit`, keeping the previous one as `tmpOLD.fit`
+and renaming them so one complete copy always exists. After a restart in the middle of a ride
+(`Log_ResumeOpenTempFiles`, `0xd0217d4c`) the files are reopened from that header and the ride goes on: at most
+the last minute is lost. Saving (`Log_PreStop`, `0xd021c5e0`) finalizes the files and renames `tmp.fit` to
+`<date><time>.fit`; discarding deletes them.
+
+A restart before the first checkpoint leaves nothing to resume. That is what happened on 2026-10-22: `P9` called
+`Fit_WriteRaw` through a pointer without the Thumb bit, so the processor faulted (`CFSR 0x20000`, invalid state)
+while writing the first record definition, at every ride start and save.
+
+**Crash guard** (`patches/guard.h`). Each patch entry point that runs during a ride has a state byte in SRAM4
+(`0x3800f920`): busy while the patch runs, idle when it returns. SRAM4 survives the restart after a fault (the
+fault handler cleans the data cache first) but not a power-off. If the byte is still busy at the next call, the
+patch did not return: that entry point is switched off until power-off and its caller takes the stock path. The
+firmware's own recovery then resumes the ride without the patch. `P8` guards its three entry points (ANT+ beats,
+Bluetooth beats, hrv messages); `P9` guards the field and, with one shared guard, the record definition and the
+records (a definition with the Alpha1 field must be followed by records with it: when the guard is off they carry
+an invalid value). A restart for another reason while a guarded call is preempted also switches it off: harmless,
+the feature is back after power-off.
+
 ## HRV recording (P8)
 
 Heart rate straps send the time of each beat, but the stock firmware keeps only the heart rate. With ANT+, its

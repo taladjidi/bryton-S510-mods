@@ -67,7 +67,7 @@ def link(obj, cave, fw_syms):
         where[i] = cave + len(blob)
         blob += bytes(sh[i]['size']) if sh[i]['type'] == 8 else o[sh[i]['off']:sh[i]['off'] + sh[i]['size']]
     symtab = next(s for s in sh if s['type'] == 2)
-    syms, addr_of = [], {}
+    syms, syms_und, addr_of = [], [], {}
     for k in range(symtab['size'] // 16):
         st_name, value, _, info, _, shndx = struct.unpack_from('<IIIBBH', o, symtab['off'] + 16 * k)
         name = cstr(sh[symtab['link']]['off'], st_name) if st_name else ''
@@ -80,6 +80,7 @@ def link(obj, cave, fw_syms):
         else:
             a = None
         syms.append(a)
+        syms_und.append(shndx == 0 and bool(name))
         if name and a is not None:
             addr_of[name] = a
     for rs in sh:
@@ -93,6 +94,11 @@ def link(obj, cave, fw_syms):
             if S is None:
                 sys.exit(f'asm2patch: relocation against an unplaced symbol at 0x{P:08x}')
             if typ == R_ARM_ABS32:
+                # A firmware function taken by address (clang loads it from a literal pool and calls with blx)
+                # needs its Thumb bit; @sym gives even addresses, and undefined symbols carry no type to tell.
+                # ponytail: every @sym in the image is code; one naming data there would need a type tag
+                if syms_und[r_info >> 8] and BASE <= S < BASE + 0x800000:
+                    S |= 1
                 blob[at:at + 4] = struct.pack('<I', (S + struct.unpack_from('<I', blob, at)[0]) & 0xffffffff)
             elif typ in (R_ARM_THM_CALL, R_ARM_THM_JUMP24):
                 is_bl = struct.unpack_from('<H', blob, at + 2)[0] & 0x5000 == 0x5000

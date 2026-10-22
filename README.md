@@ -167,6 +167,18 @@ keep their source next to the `.patch` file, in assembly (`P5`, `P6`) or C (`P7`
 patch lines (the code, the `bl` hooks declared with `@hook` and the `b.w` ones declared with `@jump`). Every instruction
 is checked in Ghidra with `ghidra/scripts/PatchCheck.java` before flashing.
 
+**Golden rule: a patch must never cost a ride.** The stock firmware already protects the ride file: it writes
+`\Activities\tmp.fit` as the ride goes, flushes it every 60 s together with a recovery header, and resumes from
+there after a restart ([how a ride is saved](docs/how-it-works.md#how-a-ride-is-saved)). Patches keep it that way:
+- Ride data goes through Bryton's own FIT functions into that file, never only into RAM, so the 60 s checkpoint
+  covers it.
+- Every C entry point that runs during a ride is wrapped in `patches/guard.h`: if the unit restarts while the patch
+  is inside, the next call takes the stock path, so a bug costs one restart instead of a restart loop. Pieces that
+  must agree (a record definition and its records) share one guard.
+- Before a ride build: start a ride by hand, wait over a minute, restart with the 4 buttons (the ride must
+  resume), then stop and save. `tools/asm2patch.py` sets the Thumb bit on firmware functions called through a
+  pointer (`tests/test_tools.py`; a missing bit restarted the unit at every ride start and save, 2026-10-22).
+
 ## Contributing
 
 Feedback is very welcome, especially from other S510 owners.

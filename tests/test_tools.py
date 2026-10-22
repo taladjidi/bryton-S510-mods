@@ -56,7 +56,7 @@ class Tools(unittest.TestCase):
 
     def test_every_patch_builds_and_only_changes_its_bytes(self):
         van = open(os.path.join(build.VAN, 'IMG.raw'), 'rb').read()
-        for f in sorted(os.listdir(self.patches)):
+        for f in sorted(f for f in os.listdir(self.patches) if f.endswith('.patch')):
             pid = f.split('-')[0]
             raw = self.raw_of(self.build(pid))
             changed = sum(a != b for a, b in zip(raw[:-4], van[:-4]))
@@ -127,6 +127,38 @@ class Tools(unittest.TestCase):
             patch = open(os.path.join(build.PATCHES, os.path.splitext(f)[0] + '.patch')).read()
             for line in out.splitlines():
                 self.assertIn(' '.join(line.split()[:3]), ' '.join(patch.split()), f'{f}: {line[:60]}')
+
+    def test_firmware_function_pointer_has_thumb_bit(self):
+        """A firmware function called through a pointer (literal pool + blx) must be odd: the even 0xd02942ca in P9
+        hard-faulted (INVSTATE) at every ride start and save on the unit, 2026-10-22."""
+        if not shutil.which('clang'):
+            self.skipTest('clang not installed')
+        src = os.path.join(self.tmp, 'ptr.c')
+        with open(src, 'w') as f:
+            f.write('// @cave 0xd03d8000\n// @sym Fit_WriteRaw 0xd02942ca\n'
+                    'extern void Fit_WriteRaw(const void *b, unsigned n, void *f);\n'
+                    'void (*volatile p)(const void *, unsigned, void *) = Fit_WriteRaw;\n')
+        out = subprocess.run([sys.executable, os.path.join(ROOT, 'tools', 'asm2patch.py'), src],
+                             capture_output=True, text=True, check=True).stdout
+        self.assertIn('cb4229d0', out.split()[2])
+
+    def test_crash_guard(self):
+        """patches/guard.h: a restart inside a guarded call switches that entry point to the stock path."""
+        if not shutil.which('clang'):
+            self.skipTest('clang not installed')
+        drv = os.path.join(self.tmp, 'guard.c')
+        with open(drv, 'w') as f:
+            f.write('#include <stdint.h>\n#include <string.h>\nstatic uint8_t buf[32];\n'
+                    f'#define GUARD_AT ((uintptr_t)buf)\n#include "{os.path.join(build.PATCHES, "guard.h")}"\n'
+                    'int main(void) {\n  memset(buf, 0xb5, sizeof buf);   /* SRAM4 after power-on */\n'
+                    '  if (!guard_enter(0)) return 1;\n  guard_leave(0);\n'
+                    '  if (!guard_enter(0)) return 2;   /* restart inside this call: */\n'
+                    '  if (guard_enter(0)) return 3;    /* stock path from now on */\n'
+                    '  if (guard_enter(0)) return 4;\n'
+                    '  if (!guard_enter(1)) return 5;   /* other entry points unaffected */\n'
+                    '  guard_leave(1);\n  return 0;\n}\n')
+        subprocess.run(['clang', '-O1', '-Wall', '-Werror', drv, '-o', drv[:-2]], check=True)
+        self.assertEqual(subprocess.run([drv[:-2]]).returncode, 0)
 
     def test_dfa_a1_matches_reference(self):
         """P9's DFA (built for this computer) against a plain Python DFA: white noise ~0.5, brown noise ~1.5."""

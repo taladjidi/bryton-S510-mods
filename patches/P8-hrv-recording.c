@@ -32,6 +32,7 @@
 // @sym g_AntHr_lastBeatTime 0x3003e5ae
 // @sym g_AntHr_prevBeatTime 0x3003e472
 #include <stdint.h>
+#include "guard.h"                                         // crash guard: a fault here costs one restart
 
 extern uint32_t Ant_Hr_ProcessData(void *evt, void *a, void *b, void *c);
 extern void Ble_App_HrsCEvtHandler(void *hrs_c, const uint8_t *evt);
@@ -83,6 +84,8 @@ static void push_rr(uint32_t rr)
 // ANT+: replaces Bryton's call to Ant_Hr_ProcessData (same arguments, same result).
 uint32_t ant_hr_process(void *evt, void *a, void *b, void *c)
 {
+    if (!guard_enter(G_P8_ANT))
+        return Ant_Hr_ProcessData(evt, a, b, c);
     uint8_t c0 = g_AntHr_lastBeatCount;
     uint16_t t0 = g_AntHr_lastBeatTime;
     uint32_t r = Ant_Hr_ProcessData(evt, a, b, c);
@@ -95,6 +98,7 @@ uint32_t ant_hr_process(void *evt, void *a, void *b, void *c)
             push_rr(dp);                                     // 3+ beats: that first span holds several, dropped
         push_rr((uint16_t)(t1 - p));
     }
+    guard_leave(G_P8_ANT);
     return r;
 }
 
@@ -102,9 +106,11 @@ uint32_t ant_hr_process(void *evt, void *a, void *b, void *c)
 // Event (Nordic ble_hrs_c_evt_t): type at 0 (2 = notification), RR count at 6, RR[20] at 8.
 void ble_hrs_evt(void *hrs_c, const uint8_t *evt)
 {
-    if (evt[0] == 2)
+    if (evt[0] == 2 && guard_enter(G_P8_BLE)) {
         for (uint32_t i = 0; i < evt[6] && i < 20; i++)
             push_rr(((const uint16_t *)(evt + 8))[i]);
+        guard_leave(G_P8_BLE);
+    }
     Ble_App_HrsCEvtHandler(hrs_c, evt);
 }
 
@@ -116,6 +122,8 @@ void write_record_then_hrv(const void *buf, uint32_t len, void *file)
 {
     uint32_t rr[SLOTS];
     Fit_WriteRaw(buf, len, file);
+    if (!guard_enter(G_P8_HRV))
+        return;
     uint32_t p = irq_off(), n = BKP(COUNT);
     if (n > SLOTS)
         n = 0;
@@ -131,4 +139,5 @@ void write_record_then_hrv(const void *buf, uint32_t len, void *file)
         Fit_WriteDefinitionMsg(10, hrv_def, sizeof hrv_def, file);
         Fit_WriteDataMsg(10, t, sizeof t, file);
     }
+    guard_leave(G_P8_HRV);
 }

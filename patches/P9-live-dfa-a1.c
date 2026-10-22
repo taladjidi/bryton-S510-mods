@@ -44,6 +44,7 @@
 // @sym g_HRLog_pointBuf 0x3003cae4
 // @sym g_HRLog_pointLen 0x2400ec34
 #include <stdint.h>
+#include "guard.h"                                         // crash guard: a fault here costs one restart
 
 extern uint32_t OSTimeGet(void);                           // uC/OS-II ticks, 1 ms
 extern void Fit_WriteDefinitionMsg(uint32_t local, const void *def, uint32_t len, void *file);
@@ -147,7 +148,11 @@ static float a1_now(struct dfa_state *st)
 static void dfa_value(uint8_t *ctx)
 {
     uint8_t *out = *(uint8_t **)(ctx + 0x18);
-    float v = a1_now(ST);
+    float v = -1;
+    if (guard_enter(G_P9_FIELD)) {
+        v = a1_now(ST);
+        guard_leave(G_P9_FIELD);
+    }
     *(float *)out = v;
     out[4] = v < 0 ? 0xff : 2;
 }
@@ -171,24 +176,30 @@ static const uint8_t dev_field[] = { 1, 0, 4, 0 };          // 1 developer field
 // Replaces Bryton's Fit_WriteDefinitionMsg(local, def, len, file) for the record definitions.
 void record_def(uint32_t local, const uint8_t *def, uint32_t len, void *file)
 {
-    uint32_t size = 1;                                      // header byte + Bryton's fields
-    for (uint32_t i = 0; i < def[4]; i++)
-        size += def[5 + 3 * i + 1];
-    int on = local < 4 && size + 4 <= RECORD_BUF;
+    // One guard for the definition and its records: a definition with the field needs records with it.
+    int ok = guard_enter(G_P9_FILE), on = 0;
+    if (ok) {
+        uint32_t size = 1;                                  // header byte + Bryton's fields
+        for (uint32_t i = 0; i < def[4]; i++)
+            size += def[5 + 3 * i + 1];
+        on = local < 4 && size + 4 <= RECORD_BUF;
+    }
     RF->magic = REC_MAGIC;
     RF->on[local & 3] = on;
-    if (!on) {
+    if (!on)
         Fit_WriteDefinitionMsg(local, def, len, file);
-        return;
+    else {
+        Fit_WriteDefinitionMsg(11, devid_def, sizeof devid_def, file);
+        Fit_WriteDataMsg(11, devid_data, sizeof devid_data, file);
+        Fit_WriteDefinitionMsg(11, desc_def, sizeof desc_def, file);
+        Fit_WriteDataMsg(11, desc_data, sizeof desc_data, file);
+        uint8_t h = 0x60 | local;                           // definition + developer data flag
+        Fit_WriteRaw(&h, 1, file);
+        Fit_WriteRaw(def, len, file);
+        Fit_WriteRaw(dev_field, sizeof dev_field, file);
     }
-    Fit_WriteDefinitionMsg(11, devid_def, sizeof devid_def, file);
-    Fit_WriteDataMsg(11, devid_data, sizeof devid_data, file);
-    Fit_WriteDefinitionMsg(11, desc_def, sizeof desc_def, file);
-    Fit_WriteDataMsg(11, desc_data, sizeof desc_data, file);
-    uint8_t h = 0x60 | local;                               // definition + developer data flag
-    Fit_WriteRaw(&h, 1, file);
-    Fit_WriteRaw(def, len, file);
-    Fit_WriteRaw(dev_field, sizeof dev_field, file);
+    if (ok)
+        guard_leave(G_P9_FILE);
 }
 
 // Replaces Bryton's call to HRLog_Point_AddCoreTemp, the last field of the record: then Alpha1.
@@ -198,7 +209,12 @@ void core_temp_then_alpha1(void)
     uint32_t local = g_HRLog_pointBuf[0] & 15, len = g_HRLog_pointLen;
     if (RF->magic != REC_MAGIC || local > 3 || !RF->on[local] || len + 4 > RECORD_BUF)
         return;
-    union { float f; uint32_t u; } a = { a1_now(ST_REC) };
+    // Off after a fault: the records still need their 4 bytes (the definition is already written): invalid.
+    union { float f; uint32_t u; } a = { -1 };
+    if (guard_enter(G_P9_FILE)) {
+        a.f = a1_now(ST_REC);
+        guard_leave(G_P9_FILE);
+    }
     if (a.f < 0)
         a.u = 0xffffffff;                                   // FIT invalid float32
     for (int i = 0; i < 4; i++)
