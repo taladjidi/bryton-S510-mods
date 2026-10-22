@@ -167,17 +167,25 @@ keep their source next to the `.patch` file, in assembly (`P5`, `P6`) or C (`P7`
 patch lines (the code, the `bl` hooks declared with `@hook` and the `b.w` ones declared with `@jump`). Every instruction
 is checked in Ghidra with `ghidra/scripts/PatchCheck.java` before flashing.
 
-**Golden rule: a patch must never cost a ride.** The stock firmware already protects the ride file: it writes
-`\Activities\tmp.fit` as the ride goes, flushes it every 60 s together with a recovery header, and resumes from
-there after a restart ([how a ride is saved](docs/how-it-works.md#how-a-ride-is-saved)). Patches keep it that way:
-- Ride data goes through Bryton's own FIT functions into that file, never only into RAM, so the 60 s checkpoint
-  covers it.
-- Every C entry point that runs during a ride is wrapped in `patches/guard.h`: if the unit restarts while the patch
-  is inside, the next call takes the stock path, so a bug costs one restart instead of a restart loop. Pieces that
-  must agree (a record definition and its records) share one guard.
-- Before a ride build: start a ride by hand, wait over a minute, restart with the 4 buttons (the ride must
-  resume), then stop and save. `tools/asm2patch.py` sets the Thumb bit on firmware functions called through a
-  pointer (`tests/test_tools.py`; a missing bit restarted the unit at every ride start and save, 2026-10-22).
+**Golden rule: a patch must never fail, and never cost a ride.** On 2026-10-22 one wrong function pointer in `P9`
+restarted the unit at every ride start and save, and a 3 h ride was lost. So:
+- **Every entry point runs on an emulator before it reaches the unit.** `tools/patchsim.py P8 P9` loads the patched
+  image into an emulated Arm core and calls each entry point (each `bl` / `b.w` hook, each function pointer, and
+  each callback the code hands out) hundreds of times with random arguments and random memory. It fails on a
+  call without the Thumb bit, a fault, an unmapped access, a write into the image, ITCM, a peripheral or firmware
+  RAM the source does not name, a loop that does not end, or more than 512 B of stack. `deploy.py` refuses to copy
+  an image that does not pass; CI runs it on every push. It found the bug above when run on the old bytes.
+  Where the firmware promises more than a C prototype says, the source states it (`// @args dfa_value p{0x18:p}`:
+  the word at +0x18 of the first argument is a valid pointer).
+- **Every instruction is checked in Ghidra** (`ghidra/scripts/PatchCheck.java`), and logic gets a host test
+  (`tests/test_tools.py`: DFA against a Python reference).
+- **Ride data goes through Bryton's own FIT functions** into `\Activities\tmp.fit`, which the firmware flushes
+  with a recovery header every minute and resumes after a restart ([how a ride is
+  saved](docs/how-it-works.md#how-a-ride-is-saved)); never only into RAM.
+- **Last line of defence on the recording path:** `P8` and `P9` wrap their entry points in `patches/guard.h`, so a
+  restart inside them switches that piece to the stock path instead of restarting again.
+- **Before a ride build, on the unit:** start a ride by hand, wait over a minute, restart with the 4 buttons (the
+  ride must resume), then stop and save.
 
 ## Contributing
 

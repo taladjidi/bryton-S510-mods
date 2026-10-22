@@ -4,3 +4,5 @@ source: patches/P14-page-key-first.c, docs/how-it-works.md#snappier-ui-p13-p14-p
 0xd026f3b2  sha256:7f19336e874bc41d  6df125fe  # HRApp_ProcessKeyMessage: bl Ui_DispatchKeyListeners -> key_listeners
 0xd026f3b8  sha256:d8c7cdd9313fbeda  6df130fe  # HRApp_ProcessKeyMessage: bl Ride_OnKeyMessage -> key_ride
 0xd03dd000  sha256:762b023699a0e48a  b0b50c460546042802d10420cbf5d3ff28462146bde8b0405ff6c2bf042808bf7047cbf5c8bf  # code: P14-page-key-first.c (38 B, ends 0xd03dd026)
+# sym 0xd03dd001 key_listeners
+# sym 0xd03dd01d key_ride

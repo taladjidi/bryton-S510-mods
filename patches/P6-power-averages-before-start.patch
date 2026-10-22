@@ -4,3 +4,4 @@ source: patches/P6-power-averages-before-start.s, docs/how-it-works.md (P6)
 0xd0280a06  sha256:6b951c5ab93a4bf1  00bf00bf  # RidePower_Tick: bne.w 0xd0280bbe (skip all unless recording) -> nop; nop
 0xd0280a9a  sha256:aeff8e8b41a8dedc  56f111f8  # RidePower_Tick: bl Ride_UpdateTss -> bl p6_gate (the record-state check, moved below the averages)
 0xd03d6ac0  sha256:e7ecebbc590bc88b  2878012801d0aaf67ab8aaf6c3be  # code: P6-power-averages-before-start.s (14 B, ends 0xd03d6ace)
+# sym 0xd03d6ac1 p6_gate

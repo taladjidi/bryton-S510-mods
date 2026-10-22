@@ -145,6 +145,7 @@ static float a1_now(struct dfa_state *st)
 }
 
 // Value callback: ctx + 0x18 -> { float value; uint8_t format; }
+// @args dfa_value p{0x18:p}  (tools/patchsim.py: Field_FormatValueString always sets that pointer)
 static void dfa_value(uint8_t *ctx)
 {
     uint8_t *out = *(uint8_t **)(ctx + 0x18);

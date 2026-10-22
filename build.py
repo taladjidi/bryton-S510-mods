@@ -175,10 +175,16 @@ def main(argv):
         if os.path.isfile(img):
             return package(open(img, 'rb').read(), raw, name, ['vanilla R039, Bryton\'s img.bin unchanged'])
         return package(pack(raw), raw, name, ['vanilla R039, repacked from IMG.raw (no img.bin)'])
+    raw, manifest, _ = apply(argv)
+    return package(pack(raw), raw, name, manifest)
+
+
+def apply(pids):
+    """The patched raw image, its manifest lines, and {patch file: [(address, new bytes)]}."""
     raw = bytearray(open(os.path.join(VAN, 'IMG.raw'), 'rb').read())
     van = bytes(raw)
-    owned, manifest = {}, ['vanilla R039 sha256 ' + sha(van)]
-    for pid in argv:
+    owned, manifest, changes = {}, ['vanilla R039 sha256 ' + sha(van)], {}
+    for pid in pids:
         fname, meta, edits = load_patch(pid)
         manifest.append(f'{fname}: {meta["desc"]}  [{meta["source"]}]')
         for e in edits:
@@ -201,14 +207,14 @@ def main(argv):
                     die(f'{fname}: 0x{a:08x} overlaps {owned[i]}')
                 owned[i] = fname
             raw[o:o + len(new)] = new
+            changes.setdefault(fname, []).append((a, bytes(new)))
             manifest.append(f'  0x{a:08x}  {len(new)} B -> {new.hex()}{note}')
     raw[-4:] = add_sum(raw[:-4]).to_bytes(4, 'little')
     raw = bytes(raw)
     diff = [i for i in range(len(raw) - 4) if raw[i] != (van[i] if i < len(van) else 0)]
     if any(i not in owned for i in diff):
         die('bytes changed outside the declared patches')   # cannot happen; belt and braces
-
-    return package(pack(raw), raw, name, manifest)
+    return raw, manifest, changes
 
 
 if __name__ == '__main__':

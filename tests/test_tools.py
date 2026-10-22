@@ -142,6 +142,23 @@ class Tools(unittest.TestCase):
                              capture_output=True, text=True, check=True).stdout
         self.assertIn('cb4229d0', out.split()[2])
 
+    def test_patchsim(self):
+        """Every entry point of the ride build runs clean on the emulator, and the emulator catches the bug of
+        2026-10-22 (P9's pointer to Fit_WriteRaw without the Thumb bit), recreated by clearing that bit."""
+        try:
+            sys.path.insert(0, os.path.join(ROOT, 'tools'))
+            import patchsim
+        except ImportError:
+            self.skipTest('unicorn not installed')
+        ride = ['P1', 'P3', 'P5', 'P6', 'P7', 'P8', 'P9', 'P12', 'P13', 'P14', 'P17']
+        self.assertEqual(patchsim.check(ride, 100), [])
+        p9 = os.path.join(self.patches, 'P9-live-dfa-a1.patch')
+        text = open(p9).read()
+        self.assertIn('cb4229d0', text)
+        open(p9, 'w').write(text.replace('cb4229d0', 'ca4229d0', 1))
+        bad = patchsim.check(['P8', 'P9'], 100)
+        self.assertTrue(any('0xd02942ca in ARM state' in b for b in bad), bad)
+
     def test_crash_guard(self):
         """patches/guard.h: a restart inside a guarded call switches that entry point to the stock path."""
         if not shutil.which('clang'):

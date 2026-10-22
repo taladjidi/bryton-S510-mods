@@ -22,6 +22,8 @@ jobs:
           key: firmware-${{ hashFiles('firmware/SHA256SUMS') }}
       - name: Stock firmware (from Bryton's server; build.py re-checks the hashes)
         run: '[ -f firmware/R039/img.bin ] || python3 tools/fetch_firmware.py'
+      - name: Patch emulator (tools/patchsim.py)
+        run: pip install unicorn==2.1.4
       - name: Tests (every patch, the preset, refusals, deploy to a fake drive, readback, web builder == build.py)
         run: python3 -W ignore::ResourceWarning tests/test_tools.py -v
 

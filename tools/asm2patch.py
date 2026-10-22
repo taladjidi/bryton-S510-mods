@@ -67,7 +67,7 @@ def link(obj, cave, fw_syms):
         where[i] = cave + len(blob)
         blob += bytes(sh[i]['size']) if sh[i]['type'] == 8 else o[sh[i]['off']:sh[i]['off'] + sh[i]['size']]
     symtab = next(s for s in sh if s['type'] == 2)
-    syms, syms_und, addr_of = [], [], {}
+    syms, syms_und, addr_of, funcs = [], [], {}, set()
     for k in range(symtab['size'] // 16):
         st_name, value, _, info, _, shndx = struct.unpack_from('<IIIBBH', o, symtab['off'] + 16 * k)
         name = cstr(sh[symtab['link']]['off'], st_name) if st_name else ''
@@ -83,6 +83,8 @@ def link(obj, cave, fw_syms):
         syms_und.append(shndx == 0 and bool(name))
         if name and a is not None:
             addr_of[name] = a
+            if info & 15 == 2 and shndx in where:                        # STT_FUNC placed here
+                funcs.add(name)
     for rs in sh:
         if rs['type'] != 9 or rs['info'] not in where:         # SHT_REL for a placed section
             continue
@@ -105,7 +107,7 @@ def link(obj, cave, fw_syms):
                 blob[at:at + 4] = branch(P, ((S & ~1) + branch_addend(blob[at:at + 4]) + 4), is_bl)
             else:
                 sys.exit(f'asm2patch: unsupported relocation type {typ} at 0x{P:08x}')
-    return bytes(blob), addr_of
+    return bytes(blob), addr_of, funcs
 
 
 def main(src, show_syms=False):
@@ -120,7 +122,7 @@ def main(src, show_syms=False):
         obj = os.path.join(d, 'patch.o')
         extra = CFLAGS if src.endswith('.c') else []
         subprocess.run(CLANG + extra + ['-c', src, '-o', obj], check=True)
-        code, addr_of = link(obj, cave, fw_syms)
+        code, addr_of, funcs = link(obj, cave, fw_syms)
     raw = open(os.path.join(ROOT, 'firmware', 'R039', 'IMG.raw'), 'rb').read()
     raw += bytes(max(0, cave - BASE + len(code) + 4 - len(raw)))      # past the stock end: zeros, as build.py
     h = lambda a, n: hashlib.sha256(raw[a - BASE:a - BASE + n]).hexdigest()[:16]
@@ -133,10 +135,9 @@ def main(src, show_syms=False):
     for addr, new, *comment in (l.split(None, 2) for l in tag('bytes')):
         a, new = int(addr, 16), bytes.fromhex(new)
         print(f'0x{a:08x}  sha256:{h(a, len(new))}  {new.hex()}  # {comment[0] if comment else "bytes"}')
-    if show_syms:
-        for name, a in sorted(addr_of.items(), key=lambda x: x[1]):
-            if cave <= a < cave + len(code):
-                print(f'# 0x{a:08x} {name}')
+    for name, a in sorted(addr_of.items(), key=lambda x: x[1]):
+        if cave <= a < cave + len(code) and (name in funcs or show_syms):
+            print(f'# sym 0x{a:08x} {name}')                         # for tools/patchsim.py (comment for build.py)
     print(f'0x{cave:08x}  sha256:{h(cave, len(code))}  {code.hex()}  # code: {os.path.basename(src)} '
           f'({len(code)} B, ends 0x{cave + len(code):08x})')
 

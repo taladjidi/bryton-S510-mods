@@ -5,3 +5,4 @@ source: docs/how-it-works.md#snappier-ui-p13-p14-p17; patches/P13-frame-wait-sle
 0xd035307a  sha256:75a3e9997fdb48f1  04e0  # Dbg_UartPutcWithLogBuf: ldr r1,=uart (UART write, wait for TC) -> b 0x161e (RAM ring only)
 0xd02434fa  sha256:b95014678b256f7e  9cf181fd  # Lcd_FlushAndWait: bl HAL_Delay_veneer(50) -> frame_wait(50)
 0xd03e0000  sha256:9d908ecfb6b256de  04490a780c2a03d1096a09b12cf61cbea9f532bb90ce0330  # code: P13-frame-wait-sleeps.c (24 B, ends 0xd03e0018)
+# sym 0xd03e0001 frame_wait

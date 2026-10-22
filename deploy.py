@@ -58,6 +58,17 @@ def main(argv):
     if not os.path.isfile(os.path.join(vol, 'System', 'device.txt')):
         die(f'{vol} is not the bike computer (no System/device.txt)')
     pkg = build.main(argv)
+    pids = build.resolve(argv)[1]
+    if pids != ['vanilla']:
+        try:
+            sys.path.insert(0, os.path.join(ROOT, 'tools'))
+            import patchsim
+        except ImportError:
+            die('the patch code must pass tools/patchsim.py before it goes on the unit: pip install unicorn==2.1.4')
+        bad = patchsim.check(pids)
+        if bad:
+            die('tools/patchsim.py found problems, not copying:\n  ' + '\n  '.join(bad))
+        print('patchsim: every entry point of the new code ran clean (tools/patchsim.py)')
 
     if os.path.exists(os.path.join(vol, 'IAP.bin')):
         die('IAP.bin is on the drive. Never flash a bootloader: remove it by hand and re-run')
