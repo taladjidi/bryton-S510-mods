@@ -147,6 +147,10 @@ Short version of [docs/validation.md](docs/validation.md):
 - Patches identify what they replace by **hash**, not by copying it: a wrong firmware, wrong address, two
   overlapping patches or a patch applied twice are refused.
 - The text-block encoder reproduces Bryton's compressed blocks **byte for byte** before it is trusted to write one.
+- New code is checked in layers ([testing strategy](docs/validation.md#testing-strategy-for-patch-code)):
+  build checks, Ghidra review of every instruction, host tests, **emulation fuzzing of every entry point**
+  (`tools/patchsim.py`, required by `deploy.py` and CI), then on the unit a short test, a ride start / restart /
+  save test, and a ride.
 - On the unit: full readback == stock, full stock rewrite + readback == stock and boots, then every patch flashed
   and used on real workouts (details in validation.md).
 
