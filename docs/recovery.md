@@ -28,6 +28,23 @@ before the first flash (steps 1-3) takes ten minutes and removes the remaining d
 
 Leaving: just unplug. The bootloader restarts the unit normally.
 
+- **The cable must already be in** when you do the four-button restart: without USB power the bootloader
+  ignores Page and boots the firmware (so a unit with a dark or broken firmware just stays dark).
+- The four-button restart is a reset the hardware sees even when the firmware is stuck (checked 2026-10-22 with
+  a firmware that stalls before drawing anything).
+
+#### If the USB link drops
+
+Seen on 2026-10-22 (FLASHLOG #40, #41), on a cable that had worked before, plugged straight into the Mac:
+- In the stock OS the BRYTON drive vanished every 80 to 90 s. The macOS log shows the USB device leaving first,
+  then the FAT unmount failing with EIO: the unit dropped off the bus, nothing on the Mac ejected it.
+- In Engineer Mode a read stopped with `bulk in: LIBUSB_ERROR_IO`; the screen still said "Engineer Mode"
+  (no reset, USB power still seen) but the device was gone from the bus. So the data lines, not the power.
+- Unplugging, re-entering Engineer Mode and retrying worked (full 4 MB read in 10 s).
+- Cause not found yet; connector or cable data wires are the suspects (inferred). Avoid hubs (an LG monitor
+  hub and an Anker hub were in the path for the first drops). `--write-vanilla` stops at the first bad chunk
+  and can simply be run again.
+
 ### Step 2: read back your firmware (read-only, cannot harm the unit)
 
 ```sh

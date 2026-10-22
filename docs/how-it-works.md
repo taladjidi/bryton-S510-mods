@@ -48,6 +48,10 @@ the filesystem is mounted. In order:
    logged**, the update still completes.
 6. `update.ini`, `IMG.bin`, `IMGUnzip.bin` are deleted and the unit restarts.
 
+A **raw** `IMG.bin` ("R" + 3 digits at 0x94, no gzip) is written as is from offset 0 of the firmware area, its
+4-byte trailer included; the rest of the area keeps the previous image. Checked on the unit by readback
+(FLASHLOG #41, a 1 MB + 4 B image from bryton-rustfw).
+
 If USB is connected when the unit starts, it stays in USB-drive mode and restarts when unplugged, so in
 practice: copy the files, eject, unplug. This is exactly what the official Bryton Active "update with cable"
 does. Just before the update routine, a cleanup deletes `*.exe` files in the drive's root; nothing else.

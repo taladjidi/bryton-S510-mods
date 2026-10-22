@@ -22,6 +22,11 @@ others miss; none proves the code correct on its own.
 Last line of defence, not a substitute for the layers: on the recording path (`P8`, `P9`), `patches/guard.h`
 switches an entry point to the stock path if the unit restarted while it was running.
 
+The from-scratch Rust firmware (github.com/taladjidi/bryton-rustfw) follows the same layered approach (its
+AGENTS.md, "Testing strategy") and adds one for boot code: its emulator (Renode) passed an image that stopped at
+its first MPU write on the unit (2026-10-22), so boot steps that touch the core are checked on the unit with a
+build that flashes the backlight once per boot stage.
+
 Why the layers grew: on 2026-10-22 `P9` (layers 1, 2, 3, 6 passed) wrote a firmware function pointer without its
 Thumb bit; the first ride start faulted, and a 3 h ride was lost. Layer 2 showed the right address but not the
 missing bit, and layer 6 never started a ride by hand. Layers 4, 5 and 7 and the Thumb bit check in layer 1 came
