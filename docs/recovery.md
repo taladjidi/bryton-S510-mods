@@ -32,6 +32,9 @@ Leaving: just unplug. The bootloader restarts the unit normally.
   ignores Page and boots the firmware (so a unit with a dark or broken firmware just stays dark).
 - The four-button restart is a reset the hardware sees even when the firmware is stuck (checked 2026-10-22 with
   a firmware that stalls before drawing anything).
+- Holding Page while plugging the cable into a unit that is already on does **not** restart it: the bootloader
+  only runs at a reset (checked 2026-10-22, FLASHLOG #51). bryton-rustfw uses this as a test signal: its
+  diagnostic images reset as soon as USB power appears, so Engineer Mode then proves the image ran.
 
 #### If the USB link drops
 
