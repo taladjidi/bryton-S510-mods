@@ -64,7 +64,9 @@ The bootloader (internal flash, never written by these tools) does, at every res
 2. Copies **6 MB** of the firmware area from eMMC to SDRAM `0xd0000000`, with **no checksum, no signature**.
 3. If the **Page** button (PE3, lower right) is held **and** USB power is present: stays in its own USB mode
    (screen: "Engineer Mode") until the cable is removed, then resets.
-4. Otherwise jumps to the image's reset vector.
+4. Otherwise turns both caches off (I-cache invalidated, D-cache cleaned and invalidated), stops SysTick, makes
+   the image region read-only in the MPU, and jumps to the image's reset vector. The image starts uncached: the
+   stock OS turns the caches on again itself.
 
 ### Bootloader USB mode
 
@@ -75,6 +77,12 @@ A USB mass-storage device (`0483:5720`, bulk endpoints OUT `0x01` / IN `0x81`). 
 |-----------:|---------------------------|
 | `0x0d` | read 2 KB of the firmware area |
 | `0x0c` | write 2 KB of the firmware area |
+| `0x04` | READ: the 32-bit byte sum of the bootloader's 128 KB of flash, little-endian in the first 4 bytes |
+
+The handler also has a "read 2 KB of internal flash" case (`0x0b`), but the READ path never passes `0x0b` to it
+(only `0x03 0x04 0x05 0x0d 0x10 0x13 0x14 0x15`): the reply is a stale buffer, so the bootloader cannot be dumped
+over USB. Its sum can be checked instead (`tools/iaprecover.py --boot-sum` in bryton-rustfw): on 2026-10-22 the
+unit's bootloader summed to `0x00548f3c`, the same as R039 `iap.bin`.
 
 For those, the LBA field is the 2 KB chunk index (byte offset = LBA × 2048) and the transfer length must be
 4 blocks (2048 B). A failed eMMC write is only printed on the bootloader's debug UART; the USB status still says
