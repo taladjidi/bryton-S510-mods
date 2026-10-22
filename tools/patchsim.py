@@ -91,15 +91,16 @@ def sources(fname):
 def arg_kinds(fname):
     """{function name: [argument kinds]} from the patch's C source: the prototype gives 'p' (pointer), 'i' (integer),
     'f' (float); a line "@args NAME p{0x18:p} i" overrides it where the firmware promises more (here: the word at
-    +0x18 of the first argument is a valid pointer). Assembly entries have none: registers get firmware-like
-    values."""
+    +0x18 of the first argument is a valid pointer). "@args" lists registers from r0 on, so a hook in the middle
+    of a firmware function can say which of the caller's registers hold pointers ("x": any value, as for an
+    assembly entry without "@args")."""
     out = {}
     for src in sources(fname):
         text = open(src).read()
         for m in re.finditer(r'^[\w ]*?[\s*](\w+)\s*\(([^)]*)\)\s*\{', text, re.M):
             params = [a.strip() for a in m[2].split(',') if a.strip() not in ('', 'void')]
             out[m[1]] = ['f' if re.match(r'(const )?(float|double)\b', a) and '*' not in a
-                         else 'p' if '*' in a else 'i' for a in params]
+                         else 'p' if '*' in a else 'i' for a in params][:4]      # the rest go on the stack
         for m in re.finditer(r'@args\s+(\w+)\s+(.*)$', text, re.M):
             out[m[1]] = m[2].split()
     return out
@@ -202,7 +203,7 @@ class Sim:
         uc.mem_write(STACK_MAP, bytes(STACK_TOP - STACK_MAP) + soup(rnd, 64))    # + the caller's frame
         words = list(struct.unpack('<13I', soup(rnd, 13)))
         kinds = [k for k in self.kinds.get(self.owner(entry), {}).get(self.names.get(entry), []) if k != 'f']
-        for i, k in enumerate(kinds[:4]):
+        for i, k in enumerate(kinds[:13]):
             v = fill(rnd, uc, k)
             words[i] = words[i] if v is None else v
         for r, v in zip(REGS, words):
