@@ -13,6 +13,12 @@ with the same base to follow along (see [../ghidra/README.md](../ghidra/README.m
   Compiler: IAR EWARM 8.30.
 - Nothing is encrypted or signed. Integrity checks are a plain additive checksum, gzip's CRC32, and a read-back
   after writing.
+- Learned from the from-scratch firmware (bryton-rustfw, 2026-10-23, read on the unit over its USB link):
+  - The power button drives two pins: PA0 goes high (the standby wake-up pin WKUP1) and PA1 goes low (the key).
+    PA0 must be a GPIO input before standby, as stock sets it: left in its reset analog mode, the press does not
+    wake the unit, and only the four-button restart brings it back.
+  - The panel's SPI1 (software chip select): CR1.SSI must be set before CFG2.MASTER, otherwise a mode fault
+    clears MASTER and the SPI never clocks.
 
 ## Files from Bryton's update server
 
