@@ -45,6 +45,21 @@ with the same base to follow along (see [../ghidra/README.md](../ghidra/README.m
     which builds with `+strict-align` for that). Stock runs cached, so patches are not affected, but a patch
     that ever runs before the caches are on, or with them off, must avoid unaligned accesses to SDRAM.
 
+## eMMC layout and maps (traced for rustfw, 2026-10-23)
+
+- SDMMC1 on PC8..PC12 and PD2 (AF12), 4-bit, default speed (25 MHz), 512-byte blocks, polled FIFO. The init
+  sequence and the details are in the local research notes (bryton/ghidra/STORAGE_AND_MAPS.md).
+- With N = SEC_COUNT (EXT_CSD) and B = N - 0x1201a: sectors 0 to B-1 are the FAT volume "BRYTON" (what USB mass
+  storage shows); after it, a reserved area (a 2 MB factory image "BRYTONBRYTON" at B+2, TimeZone.bin at
+  B+0x4000, the serial number at B+0x4403, light sensor calibration at B+0x4404, DeviceLangs.bin at B+0x501a) and
+  the OS image from B+0xf01a to the end, which the bootloader reads from N-0x3000 (6 MB). Nothing is signed.
+- Stock formats the volume if it fails to mount it.
+- Maps: OpenMapTiles-schema vector tiles (gzip MVT, Web Mercator XYZ, extent 4096) in a Bryton `.dat` container
+  under `\MAP\MapData\<Region>\9-x-y.dat` (plus world.dat below zoom 9); stock decodes them into an H/P tile cache
+  under `\Map\Data\Temp\Zoom<z>`. Routing: a protobuf graph on zoom-14 tiles.
+- Ride checkpoint header (Fit_SaveTempUpdateData 0xd02176d6): 452 bytes, three file sizes and CRCs, a byte-sum
+  checksum, ride totals and a trail ring; tmpOLD / tmpUpdateing / tmpNEW keep one whole copy through a power cut.
+
 ## Board pins
 
 The pins as found for the rustfw firmware (from the MCU's side; details, and timing diagrams of the start-up
