@@ -45,6 +45,61 @@ with the same base to follow along (see [../ghidra/README.md](../ghidra/README.m
     which builds with `+strict-align` for that). Stock runs cached, so patches are not affected, but a patch
     that ever runs before the caches are on, or with them off, must avoid unaligned accesses to SDRAM.
 
+## Board pins
+
+The pins as found for the rustfw firmware (from the MCU's side; details, and timing diagrams of the start-up
+sequences, in rustfw's BOARD.md):
+
+
+                                      +----------------------------+
+     power button --+---------------->| PA0  WKUP1 (rising)        |
+                    +--(low pressed)->| PA1  key Back              |
+     key Lap ---------(low pressed)-->| PB2                        |
+     key Start -------(low pressed)-->| PB4  NJTRST after reset    |
+     key Page --------(low pressed)-->| PE3                        |
+                                      |                            |
+     USB VBUS (1 = plugged) --------->| PC13 WKUP4                 |
+     battery --[ / 1.5 ]------------->| PC3_C  ADC3 channel 1      |
+     charger enable (low = on) <------| PG14                       |
+     charger status ----------------->| PF6  (meaning not traced)  |
+                                      |                            |
+     USB ULPI PHY (AF10)              |                            |
+       enable  <----------------------| PA7   high = running       |
+       CK      ---------------------->| PA5                        |
+       D0..D7  <--------------------->| PA3 PB0 PB1 PB10..PB13 PB5 |
+       STP     <----------------------| PC0                        |
+       NXT     ---------------------->| PH4                        |
+       DIR     ---------------------->| PI11                       |
+                                      |                            |
+                                      |         STM32H747          |
+                                      |                            |
+       ST7789 panel 240 x 320         |                            |
+         SCK   <----------------------| PG11  SPI1 (AF5)           |
+         MOSI  <----------------------| PD7   SPI1 (AF5)           |
+         CS    <----------------------| PG10                       |
+         D/C   <----------------------| PG9   0 command, 1 data    |
+         RESET <----------------------| PI3   low = reset          |
+         power <----------------------| PG3   (inferred)           |
+         backlight <------------------| PG13  high = on            |
+                                      |                            |
+       Nordic BLE / ANT chip          |                            |
+         UART RX  <-------------------| PD5   USART2 TX (AF7)      |
+         UART TX  ------------------->| PD6   USART2 RX (AF7)      |
+         UART CTS <-------------------| PD4   USART2 RTS (AF7)     |
+         UART RTS ------------------->| PD3   USART2 CTS (AF7)     |
+         reset    <-------------------| PA6   low = reset          |
+         boot mode <------------------| PI4   high = application   |
+         request  ------------------->| PH8   (EXTI only, unused)  |
+                                      |                            |
+       u-blox M10 GNSS                |                            |
+         SCK   <----------------------| PE2   SPI4 (AF5), pull-down|
+         MOSI  <----------------------| PE6   SPI4 (AF5)           |
+         MISO  ---------------------->| PE5   SPI4 (AF5)           |
+         CS    <----------------------| PE4                        |
+         power <----------------------| PI6   high = on            |
+         line  ---------------------->| PF7   (unused here)        |
+                                      +----------------------------+
+
 ## Files from Bryton's update server
 
 `https://corp.brytonsport.com/device/riders510/` serves `release.ini` (versions/sizes) and the parts:
