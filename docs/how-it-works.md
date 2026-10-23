@@ -31,6 +31,8 @@ with the same base to follow along (see [../ghidra/README.md](../ghidra/README.m
     period 8070, open on channel 0) opens with every command answered 0. The ANT+ network key is licensed: stock
     loads it from its initialised data (0xd03d68f4 in R039); rustfw's `tools/ant_key.py` copies it from your
     own image into a private file rather than publishing it.
+    The strap a wildcard channel locked onto is read with channel ID get, `06 d4 [ch]`, answered with its device
+    number, type and transmission type (seen on the unit); reopening with that ID pairs the channel to it.
 
 ## Files from Bryton's update server
 
