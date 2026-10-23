@@ -19,6 +19,11 @@ with the same base to follow along (see [../ghidra/README.md](../ghidra/README.m
     wake the unit, and only the four-button restart brings it back.
   - The panel's SPI1 (software chip select): CR1.SSI must be set before CFG2.MASTER, otherwise a mode fault
     clears MASTER and the SPI never clocks.
+  - The Nordic BLE / ANT chip: USART2 at 1 Mbaud with RTS / CTS, framed as a 2-byte little-endian length then
+    the payload (no SLIP: that is only its DFU bootloader). Reset on PA6; PI4 high selects its application (low
+    through a reset, the DFU bootloader, inferred). Stock waits 800 ms after the reset, then speaks first. On the
+    unit `sd_ble_enable` succeeds and `sd_ble_version_get` returns 4 / 1 / 50, which stock logs as the Nordic
+    image, bootloader and SD versions (the image number is in RTC backup register 12).
 
 ## Files from Bryton's update server
 
