@@ -503,6 +503,15 @@ distance, 3 calories, 4 Total Work in kJ, 5 heart rate), a frequency (`ReminderF
 has grown by one step since the reminder was loaded, then, with *Repeats*, restarts from the current value. Total
 Work comes from the power data, calories from the calorie estimate. All six conditions are in the unit's menu.
 
+## Touch panel (stock, no patch)
+
+A Sitronix ST1xxx touch controller (ST1633 class, inferred: 5 contacts) at I2C1 address 0x55 (PB6 / PB7), INT on
+PC6, reset on PH3, powered with the panel (PG3). Stock (`Touch_Init` 0xd0243e08) releases reset, waits 100 ms,
+reads status, version and resolution, and writes no register; the EXTI6 interrupt wakes the UI task, which reads
+the point at 0x12 while a finger is down. The chip reports no gestures: Embedded Wizard recognises tap, hold, slide
+and wipe in software (page swipe in `Ui_OnTouchReleaseDetectSwipe` 0xd017c894: over 37 px across or 48 px up).
+Read on a unit: version 1, 240 x 320, Timeout to Idle 2. Details: bryton-rustfw BOARD.md section 17.
+
 ## Battery percentage
 
 Voltage only: a 100-entry table maps millivolts to percent (3450 mV = 0 %, ≈3790 mV = 50 %, ≥ 4140 mV = 100 %).
