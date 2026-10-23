@@ -329,6 +329,13 @@ records (a definition with the Alpha1 field must be followed by records with it:
 an invalid value). A restart for another reason while a guarded call is preempted also switches it off: harmless,
 the feature is back after power-off.
 
+**When the save fails (seen 2026-10-24 on a unit, read only):** after the 2026-10-22 crash at the save, the ride in
+progress (`\Activities\tmp.fit`) and the recovery files (`\System\tmp*.fit`) were gone, the saved file held 3.6 KB,
+and stock had **zeroed the directory entries** of the deleted files (not only their first byte), so neither start
+cluster nor size remained to undelete from. The `.ubx` GNSS logs of the restarts were 9 KB and 1.1 KB. bryton-rustfw's
+dev link now has read-only `ls`, `get` and `find` (sectors holding values in a range, such as a ride's FIT timestamps)
+for such searches; its journal (docs/journal.md) has the details.
+
 ## HRV recording (P8)
 
 Heart rate straps send the time of each beat, but the stock firmware keeps only the heart rate. With ANT+, its
