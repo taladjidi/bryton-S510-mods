@@ -26,6 +26,11 @@ with the same base to follow along (see [../ghidra/README.md](../ghidra/README.m
     image, bootloader and SD versions (the image number is in RTC backup register 12).
     Stock's SoftDevice API is v5: `sd_ble_gap_scan_start` is op 0x8a (flags, interval, window, timeout), scan
     reports are event 0x1d with the data inline, and power off is `sd_power_system_off` (op 0x32, no reply).
+    ANT commands are type 6 but their responses come back as type 1, like BLE ones (seen on the unit). Stock's
+    heart-rate channel (enable, network key on net 0, assign, channel id type 0x78, search timeout 0xff, 2457 MHz,
+    period 8070, open on channel 0) opens with every command answered 0. The ANT+ network key is licensed: stock
+    loads it from its initialised data (0xd03d68f4 in R039); rustfw's `tools/ant_key.py` copies it from your
+    own image into a private file rather than publishing it.
 
 ## Files from Bryton's update server
 
