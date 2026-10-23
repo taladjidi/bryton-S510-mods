@@ -33,6 +33,13 @@ with the same base to follow along (see [../ghidra/README.md](../ghidra/README.m
     own image into a private file rather than publishing it.
     The strap a wildcard channel locked onto is read with channel ID get, `06 d4 [ch]`, answered with its device
     number, type and transmission type (seen on the unit); reopening with that ID pairs the channel to it.
+    Stock's ANT+ sensor channels (`Ant_OpenSensorChannel` 0xd025e7f0): 0 heart rate (type 0x78, period 8070),
+    1 speed (0x7b, 8118), 2 cadence (0x7a, 16204), 3 speed and cadence (0x79, 8086), 4 power (0x0b, 4091). Its
+    BLE sensors go through Nordic's ble_db_discovery: connect op 0x8c, discovery ops 0x94 / 0x96 / 0x97,
+    notifications enabled with op 0x9c, notification event 0x39 (rustfw BOARD.md 11 has the byte layouts).
+  - With the caches off, unaligned reads from the SDRAM return bytes from the wrong lanes (seen with rustfw,
+    which builds with `+strict-align` for that). Stock runs cached, so patches are not affected, but a patch
+    that ever runs before the caches are on, or with them off, must avoid unaligned accesses to SDRAM.
 
 ## Files from Bryton's update server
 
