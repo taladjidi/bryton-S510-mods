@@ -24,6 +24,8 @@ with the same base to follow along (see [../ghidra/README.md](../ghidra/README.m
     through a reset, the DFU bootloader, inferred). Stock waits 800 ms after the reset, then speaks first. On the
     unit `sd_ble_enable` succeeds and `sd_ble_version_get` returns 4 / 1 / 50, which stock logs as the Nordic
     image, bootloader and SD versions (the image number is in RTC backup register 12).
+    Stock's SoftDevice API is v5: `sd_ble_gap_scan_start` is op 0x8a (flags, interval, window, timeout), scan
+    reports are event 0x1d with the data inline, and power off is `sd_power_system_off` (op 0x32, no reply).
 
 ## Files from Bryton's update server
 
