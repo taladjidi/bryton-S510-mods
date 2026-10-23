@@ -37,6 +37,10 @@ with the same base to follow along (see [../ghidra/README.md](../ghidra/README.m
     1 speed (0x7b, 8118), 2 cadence (0x7a, 16204), 3 speed and cadence (0x79, 8086), 4 power (0x0b, 4091). Its
     BLE sensors go through Nordic's ble_db_discovery: connect op 0x8c, discovery ops 0x94 / 0x96 / 0x97,
     notifications enabled with op 0x9c, notification event 0x39 (rustfw BOARD.md 11 has the byte layouts).
+  - The GNSS receiver is a u-blox M10 (ROM SPG 5.10) on SPI4, powered by PI6; it keeps stock's configuration
+    and sends UBX-NAV-PVT once a second straight from power-on (seen with rustfw `tools/gnss.py`).
+  - Battery: ADC3 against VREFINT, as stock; the bootloader leaves the charger enabled (PG14 low), so the
+    temperature window is stock's own doing.
   - With the caches off, unaligned reads from the SDRAM return bytes from the wrong lanes (seen with rustfw,
     which builds with `+strict-align` for that). Stock runs cached, so patches are not affected, but a patch
     that ever runs before the caches are on, or with them off, must avoid unaligned accesses to SDRAM.
