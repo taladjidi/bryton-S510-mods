@@ -177,6 +177,29 @@ class Tools(unittest.TestCase):
         subprocess.run(['clang', '-O1', '-Wall', '-Werror', drv, '-o', drv[:-2]], check=True)
         self.assertEqual(subprocess.run([drv[:-2]]).returncode, 0)
 
+    def test_fitstrip_removes_developer_data(self):
+        """A tiny ride shaped like P9's (Alpha1 on local 11, record definition with one developer field), stripped:
+        no 206/207, records back to their plain size, protocol 1.0, both CRCs right; a plain file is unchanged."""
+        import struct, fitstrip
+
+        def fit(body, proto):
+            hdr = bytearray(struct.pack('<BBHI4sH', 14, proto, 2132, len(body), b'.FIT', 0))
+            struct.pack_into('<H', hdr, 12, fitstrip.crc(hdr[:12]))
+            f = bytes(hdr) + body
+            return f + struct.pack('<H', fitstrip.crc(f))
+        file_id = bytes([0x40, 0, 0, 0, 0, 1, 0, 1, 0x00]) + bytes([0, 4])
+        devid = bytes([0x4b, 0, 0, 207, 0, 1, 3, 1, 0x02]) + bytes([0x0b, 0])
+        desc = bytes([0x4b, 0, 0, 206, 0, 2, 0, 1, 0x02, 1, 1, 0x02]) + bytes([0x0b, 0, 0])
+        rec_def = bytes([0x61, 0, 0, 20, 0, 1, 3, 1, 0x02, 1, 0, 4, 0])
+        plain_def = bytes([0x41, 0, 0, 20, 0, 1, 3, 1, 0x02])
+        recs = b''.join(bytes([0x01, hr]) + struct.pack('<f', 0.75) for hr in (120, 121, 122))
+        plain = b''.join(bytes([0x01, hr]) for hr in (120, 121, 122))
+        got = fitstrip.strip(fit(file_id + devid + desc + rec_def + recs, 0x20))
+        self.assertEqual(got, fit(file_id + plain_def + plain, 0x10))
+        self.assertEqual(fitstrip.crc(got), 0)
+        same = fit(file_id + plain_def + plain, 0x10)
+        self.assertEqual(fitstrip.strip(same), same)
+
     def test_dfa_a1_matches_reference(self):
         """P9's DFA (built for this computer) against a plain Python DFA: white noise ~0.5, brown noise ~1.5."""
         if not shutil.which('clang'):

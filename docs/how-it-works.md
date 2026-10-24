@@ -333,6 +333,20 @@ records (a definition with the Alpha1 field must be followed by records with it:
 an invalid value). A restart for another reason while a guarded call is preempted also switches it off: harmless,
 the feature is back after power-off.
 
+## How a ride reaches the Bryton app
+
+At start-up the unit lists its rides in `\Gal2.lis` (4-byte ride timestamps) and rebuilds `\upload.lis` from it
+(`GenerateUploadFileList`, `0xd024aafc`): a ride already marked keeps its timestamp, a new one gets `"0000"`. Over
+Bluetooth the app asks for the rides still at `"0000"` (`Ble_SendFileListChunk`, `0xd0209c90`); the unit sends
+each one gzip-compressed (`Ble_UploadOpenActivityFile`, `0xd027c870`, via `\Activities\UploadTemp\UploadFit.zip`).
+Once the app has the file it sends the ride's timestamp back, and the unit appends it to `\upload.lis`
+(`0xd024ace4`, which prints `UpdateUploadFileList`). From then on the unit never offers that ride again.
+
+The app (Bryton Active, Android) decodes the file with Garmin's Java FIT SDK 20.88 (modified by Bryton), keeps it,
+and uploads the raw `.fit` to Bryton's server. If the server refuses it, the app only records an "uploaded to server
+failed" notification: the ride does not show in the app, and since the unit has it marked, it is not sent again.
+
+
 **When the save fails (seen 2026-10-24 on a unit, read only):** after the 2026-10-22 crash at the save, the ride in
 progress (`\Activities\tmp.fit`) and the recovery files (`\System\tmp*.fit`) were gone, the saved file held 3.6 KB,
 and stock had **zeroed the directory entries** of the deleted files (not only their first byte), so neither start
@@ -396,6 +410,22 @@ record is built in a 63-byte buffer by `HRLog_Sensor_Point`; after its last fiel
 called at `0xd021b620`) `P9` appends the 4 bytes. A definition whose records would not fit gets no developer field.
 The value for the records is computed in the logging task with its own buffer (`0x3800d000`). Developer fields
 need FIT protocol 2.0: `Fit_BuildFileHeader` (`0xd0293f44`) now writes `0x20` instead of `0x10`.
+
+**Such rides do not sync to Bryton** (see "How a ride reaches the Bryton app"): the app takes the ride from the
+unit, Bryton's server refuses it, and it never shows in the app. Tested on 2026-10-24 by uploading variants of one
+ride on the Bryton Active website, each differing from the refused original in one way:
+
+| Variant | Accepted |
+|---|---|
+| protocol 2.0, no developer data | yes |
+| protocol 2.0, `developer_data_id` + `field_description` kept, records without developer fields | yes |
+| protocol 1.0, developer data kept | no |
+| protocol 2.0, developer data described once instead of twice | no |
+| protocol 2.0, developer fields in the records, no descriptions | no |
+
+So the server refuses the developer bytes in the records, which is exactly where Intervals.icu reads `Alpha1`: one
+file cannot serve both. `P9` keeps them; `tools/fitstrip.py` makes the copy Bryton accepts (developer data
+removed, protocol 1.0).
 
 The new title is an Embedded Wizard string blocks, and a block must be a chain of entries
 (`[length + 3, 0x4557] text NUL`) from its first byte to a 0: the string cache (`EwDisposeStrings`, `0x317a`)
