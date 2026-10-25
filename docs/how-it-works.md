@@ -492,6 +492,12 @@ Measured on the unit (a local tracing aid): Di2 message received to page event p
 starts at once. What is left: the Di2 sends its button page about every 205 ms (its radio rate, not the unit's), and
 drawing the new page (see [Snappier UI](#snappier-ui-p13-p14-p17)).
 
+The Di2 is not on the ANT+ network. Stock's channel table (`0xd027d2a0`) puts channel 6 (Di2: device type 0x01,
+period 8198, 2457 MHz) and channel 9 (Shimano STEPS) on network 1, every other sensor on network 0, and
+`Ant_SetNetworkKeys` (`0xd027d6d4`) loads network 1's key from the 8 bytes stored right after the ANT+ key (neither
+key is in this repository). Found while porting the Di2 to the Rust firmware (bryton-rustfw `571e613`, which reuses
+`P12`'s press decoding and its test sequence).
+
 ## Snappier UI (P13, P14, P17)
 
 Debug log timings (`D2`, a local timing aid) of a press of the unit's page button: the key task took the key, then
