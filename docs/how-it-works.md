@@ -580,3 +580,14 @@ reboot discards it. Patch `D1` removes that condition so every reboot saves the 
 capture, then reboot with the four buttons **without USB connected** (entering USB mode re-initialises the
 buffer and a power-off clears RAM), then plug in and read `Debug/*.log`. The Bryton app can upload files from
 `\Debug`, so delete them when done if you care.
+
+## Barometric altitude calibration (found porting it to the Rust firmware)
+
+Stock keeps its barometer's calibration in `\System\DeviceData.ini`, `[DeviceSys]`: `Alt_P0` (float, hPa, default
+1020.0: the sea-level pressure the altitude is computed from), `calAltitude_km` (default 200: the altitude, in metres,
+it was last calibrated at) and `calAltitude_mi` (default 218.7, the same in yards, inferred). The calibration sets
+`Alt_P0` so the barometer reads a known altitude, or a 3D fix's GPS altitude (`Sensor_CalibrateAltitudeFromGps`
+`0xd0193dc0`); `Baro_CheckAltCalibrationAtLocation` (`0xd026aaac`) also recalibrates at saved places. Sources:
+`Cfg_DevDataReadAltitudeCalib` `0xd01867c2`, `Cfg_DevDataApplySettingById` id `0x1d` (ghidra notes agent_a2.md).
+bryton-rustfw imports `Alt_P0` as an untrusted calibration of unknown age and replaces it at a ride's start from the
+GPS (`882a818`).
