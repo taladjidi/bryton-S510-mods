@@ -498,6 +498,12 @@ period 8198, 2457 MHz) and channel 9 (Shimano STEPS) on network 1, every other s
 key is in this repository). Found while porting the Di2 to the Rust firmware (bryton-rustfw `571e613`, which reuses
 `P12`'s press decoding and its test sequence).
 
+Known issue, read from the code (not seen on the unit yet): `Sensor_Di2Poll` and `P12`'s `side()` compare each page
+4's button bytes with the last ones seen, and both start at 0 after a boot. The Di2 keeps repeating its last press
+byte, so the first page 4 after a boot counts as a new press and runs that button's action (Start mapped: the ride
+started or paused by itself). bryton-rustfw takes the first page 4 after a start or a drop-out as the baseline
+(`7520c1c`); the same fix would fit `P12`.
+
 ## Snappier UI (P13, P14, P17)
 
 Debug log timings (`D2`, a local timing aid) of a press of the unit's page button: the key task took the key, then
