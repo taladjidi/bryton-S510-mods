@@ -61,6 +61,10 @@ with the same base to follow along (see [../ghidra/README.md](../ghidra/README.m
 - Maps: OpenMapTiles-schema vector tiles (gzip MVT, Web Mercator XYZ, extent 4096) in a Bryton `.dat` container
   under `\MAP\MapData\<Region>\9-x-y.dat` (plus world.dat below zoom 9); stock decodes them into an H/P tile cache
   under `\Map\Data\Temp\Zoom<z>`. Routing: a protobuf graph on zoom-14 tiles.
+- Road elevation (traced for rustfw, 2026-10-26): each routing node carries its height in node field 2,
+  `field2 / 5 - 500` m (RouteData_PbDecodeNodeCb 0xd0293124; 1 m steps in practice), no Topo or contour file. Climb
+  Challenge 2.0 traces the road ahead in this graph and smooths it with a 9-tap Savitzky-Golay filter over about 70 m
+  (RouteClimb_SmoothElevation 0xd028e130) before finding climbs (DoRouteClimb 0xd028e550).
 - Ride checkpoint header (Fit_SaveTempUpdateData 0xd02176d6): 452 bytes, three file sizes and CRCs, a byte-sum
   checksum, ride totals and a trail ring; tmpOLD / tmpUpdateing / tmpNEW keep one whole copy through a power cut.
 
