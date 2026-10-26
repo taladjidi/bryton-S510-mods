@@ -14,6 +14,15 @@ Bryton's own firmware, copy two files to the unit, done.
 |:---:|:---:|:---:|:---:|:---:|:---:|
 | <img src="site/img/stock-popup.jpg" width="130" alt="stock popup"> | <img src="site/img/strip.jpg" width="130" alt="strip"> | <img src="site/img/power-instant.jpg" width="130" alt="instant power"> | <img src="site/img/power-3s.jpg" width="130" alt="3 s power"> | <img src="site/img/power-10s.jpg" width="130" alt="10 s power"> | <img src="site/img/power-30s.jpg" width="130" alt="30 s power"> |
 
+## A new firmware for the same unit: bryton-rustfw
+
+These patches change Bryton's firmware in place, and that firmware cannot be redistributed: every change has to be
+rebuilt from your own copy of it. To overcome these limitations, and to have a better basis to collaborate on, there
+is also [**bryton-rustfw**](https://github.com/taladjidi/bryton-rustfw): a firmware for the Rider S510 written from
+scratch in safe Rust, open source, which shares the unit's storage with Bryton's (rides in `\Activities`, its maps,
+its settings and planned workouts), so you can switch between the two. What these patches taught about the hardware
+went into it, and what it finds comes back here.
+
 ## What it changes
 
 | Change | Patch |
