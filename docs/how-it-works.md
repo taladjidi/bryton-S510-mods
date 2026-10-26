@@ -65,6 +65,9 @@ with the same base to follow along (see [../ghidra/README.md](../ghidra/README.m
   `field2 / 5 - 500` m (RouteData_PbDecodeNodeCb 0xd0293124; 1 m steps in practice), no Topo or contour file. Climb
   Challenge 2.0 traces the road ahead in this graph and smooths it with a 9-tap Savitzky-Golay filter over about 70 m
   (RouteClimb_SmoothElevation 0xd028e130) before finding climbs (DoRouteClimb 0xd028e550).
+  A node's key packs latitude (high half) and longitude (low half) as `deltaBits`-bit sign and magnitude offsets
+  from the z14 tile's centre, in 1e-7 degrees (checked on a region file: two's complement puts most nodes outside
+  their tile).
 - Ride checkpoint header (Fit_SaveTempUpdateData 0xd02176d6): 452 bytes, three file sizes and CRCs, a byte-sum
   checksum, ride totals and a trail ring; tmpOLD / tmpUpdateing / tmpNEW keep one whole copy through a power cut.
 
