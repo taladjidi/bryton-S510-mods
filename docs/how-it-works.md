@@ -61,6 +61,11 @@ with the same base to follow along (see [../ghidra/README.md](../ghidra/README.m
 - Maps: OpenMapTiles-schema vector tiles (gzip MVT, Web Mercator XYZ, extent 4096) in a Bryton `.dat` container
   under `\MAP\MapData\<Region>\9-x-y.dat` (plus world.dat below zoom 9); stock decodes them into an H/P tile cache
   under `\Map\Data\Temp\Zoom<z>`. Routing: a protobuf graph on zoom-14 tiles.
+- Touch interrupt and sleep (found by rustfw, 2026-10-27): the touch controller's INT is EXTI line 6 (IRQ 23,
+  EXTI9_5). With interrupts masked, a pending enabled IRQ still ends WFI at once. Clearing the EXTI pending bit then
+  the NVIC's right after can leave the NVIC bit set (the EXTI write is slow to land and the line is still high), and
+  if nothing clears it again every WFI returns immediately: the CPU spun near 80 % instead of sleeping, on some builds
+  only (timing). Clearing the NVIC pending bit on every check fixed it.
 - Road elevation (traced for rustfw, 2026-10-26): each routing node carries its height in node field 2,
   `field2 / 5 - 500` m (RouteData_PbDecodeNodeCb 0xd0293124; 1 m steps in practice), no Topo or contour file. Climb
   Challenge 2.0 traces the road ahead in this graph and smooths it with a 9-tap Savitzky-Golay filter over about 70 m
