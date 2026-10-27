@@ -65,7 +65,10 @@ with the same base to follow along (see [../ghidra/README.md](../ghidra/README.m
   EXTI9_5). With interrupts masked, a pending enabled IRQ still ends WFI at once. Clearing the EXTI pending bit then
   the NVIC's right after can leave the NVIC bit set (the EXTI write is slow to land and the line is still high), and
   if nothing clears it again every WFI returns immediately: the CPU spun near 80 % instead of sleeping, on some builds
-  only (timing). Clearing the NVIC pending bit on every check fixed it.
+  only (timing). The same happened with the panel's DMA (DMA1 stream 0, IRQ 11: NVIC_ISPR0 0x00000c00 with DMA1_LISR
+  clear), so it is general: on the STM32H747's CM7, clearing a peripheral's flag and then the NVIC pending bit at once
+  can leave the bit set. The fix that holds: clear every wake source's NVIC pending bit just before each WFI, after the
+  sources were read (the lines are level, so an unread event pends again at once).
 - Road elevation (traced for rustfw, 2026-10-26): each routing node carries its height in node field 2,
   `field2 / 5 - 500` m (RouteData_PbDecodeNodeCb 0xd0293124; 1 m steps in practice), no Topo or contour file. Climb
   Challenge 2.0 traces the road ahead in this graph and smooths it with a 9-tap Savitzky-Golay filter over about 70 m
