@@ -58,6 +58,8 @@ with the same base to follow along (see [../ghidra/README.md](../ghidra/README.m
   entries differed from the first) and FSInfo's free count stale (43700 for 43767 free clusters). The eMMC offers
   enhanced reliable write (EXT_CSD WR_REL_PARAM 0x15, REL_WR_SEC_C 1). rustfw's own writer keeps both FATs equal and
   recounts FSInfo; its first writes (two short test rides into `\Activities`) left the volume consistent.
+- The S510's eMMC EXT_CSD (read 2026-10-29 with rustfw `tools/dev.py emmc`): SEC_COUNT 0x3a40000 (31.3 GB),
+  WR_REL_PARAM 0x15 (EN_REL_WR set: enhanced reliable write supported), REL_WR_SEC_C 1.
 - Maps: OpenMapTiles-schema vector tiles (gzip MVT, Web Mercator XYZ, extent 4096) in a Bryton `.dat` container
   under `\MAP\MapData\<Region>\9-x-y.dat` (plus world.dat below zoom 9); stock decodes them into an H/P tile cache
   under `\Map\Data\Temp\Zoom<z>`. Routing: a protobuf graph on zoom-14 tiles.
