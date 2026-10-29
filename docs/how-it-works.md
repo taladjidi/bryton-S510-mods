@@ -608,3 +608,12 @@ it was last calibrated at) and `calAltitude_mi` (default 218.7, the same in yard
 `Cfg_DevDataReadAltitudeCalib` `0xd01867c2`, `Cfg_DevDataApplySettingById` id `0x1d` (ghidra notes agent_a2.md).
 bryton-rustfw imports `Alt_P0` as an untrusted calibration of unknown age and replaces it at a ride's start from the
 GPS (`882a818`).
+
+## Faults and lockup
+
+2026-10-29 (bryton-rustfw): a fault whose own exception entry faults locks the core up, with no reset and no USB; only
+a four-button restart or a power cycle brings the unit back. The Rust firmware keeps PRIMASK set (interrupts only wake
+WFI), so every configurable fault escalates to HardFault (ARMv7-M ARM B1.5.4); a no-access MPU region under the thread
+stack made an overflow's HardFault try to stack its frame into that region, and a fault on HardFault's entry is lockup
+(B1.5.15). Seen on the unit from a RAM run. Any firmware that masks interrupts with PRIMASK cannot use an MPU stack
+guard; a canary word checked each pass is what bryton-rustfw does instead (its BOARD.md section 2).
