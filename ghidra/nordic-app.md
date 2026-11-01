@@ -358,3 +358,10 @@ Run in Unicorn with SoftDevice stubs (rustfw docs/devloop.md). Observed, not rev
 - **Timing (CPI 1, stubs free):** end of an event frame to the app starting the next header DMA: about 990
   instructions (15 us at 64 MHz); to the first byte on the wire 1630 (25 us). Unknown opcode 0x01: hangs within
   25 us of the command, no answer.
+
+
+## Emulator findings, step 3 (rustfw `tools/nrf_emu.py --serve`, 2026-11-01)
+
+- **"ANT events beyond 0x80 hang" was not a harness bug:** the encoder (SDK `ant_event.c` switch) accepts the event codes of ant_parameters.h only; 0x01, 0x05, 0x06, 0x07 and 0x80 all come out as 44-byte type 08 frames; a message id used as an event code (0x4F, 0x2F) returns NOT_SUPPORTED and the app hangs.
+- **Hang signature without private addresses:** the UART interrupt stays masked (critical region) and the core spins; 97 events in one SoftDevice pass hang it, 96 do not.
+- **Frame gap, deterministic:** ENDTX to the next STARTTX 966 instructions (15 us at CPI 1, 64 MHz), 1168 to the first wire byte.
