@@ -253,3 +253,88 @@ What was checked in the binary while building rustfw's `src/sim/chip_table.rs` (
   and `common/struct_ser`): every other layout. The GAP name buffer (31), advertising data (31), GATTS values (512) and ANT
   acknowledged message size (9) bounds are the SDK's / SoftDevice headers' defaults, inferred to hold in this build.
 - `sd_ble_enable` has no arguments (SDK API >= 4); rustfw sends exactly `00 60`, as does stock.
+
+
+## The stock firmware's envelope
+
+How the stock STM32 firmware (R039) drives this chip: the known-good host behaviour rustfw is compared with. Written
+2026-11-01 from the Ghidra export (a scratchpad copy of the project, read-only). Public facts are in rustfw BOARD.md
+section 11; the command table and the rustfw differences are in rustfw `docs/` (see its status). Summary: stock reads
+USART2 by interrupt per byte (priority 6) and decodes each event at once into 119-slot queues, never truncates a
+frame it started, waits 5 s for a response (no retry, no chip reset), holds RTS only in its stop mode (never while
+recording, 100 ms at most), opens ANT searches that never time out (0xFF), sends 60 distinct opcodes. Addresses:
+
+The stock image's address space is 0xD0000000 (SDRAM). Names are those of the Ghidra project (names/*.txt); "enc" =
+the SDK serialization encoder.
+
+- **Transport.** `ser_phy_open` 0xd02c92f4; header read `Ble_SerPhyRxHeaderStart` 0xd02c9198; payload `ser_phy_rx_buf_set`
+  0xd02c9384 (chunks of 0xff); `ser_phy_tx_pkt_send` 0xd02c9328 (flag byte 0x3003d59c = TX busy); UART driver
+  `Ble_UartDrvIrqHandler` 0xd02c9c2c (RXNE loop reads while the FIFO is not empty and the expected count is not reached;
+  an error prints "UART Error %d", clears the flags and calls the handler with event type 2); `Ble_UartDrvRx` 0xd02c9b7c;
+  `Ble_UartDrvTx` 0xd02c9ad2 (blocking only when no handler is set: it is set). `Ble_NordicUartInit` 0xd023dd58: HAL init,
+  baud argument 0 = 1 Mbaud, HwFlowCtl 0x300 (RTS_CTS), FIFO flag word 0x20000000, then NVIC IRQ 0x1b enable with priority word 0x30000.
+- **HAL transport** (`ser_hal_transport`): RX state byte 0x2406737c, TX state 0x2406737d, RX packet buffer 0x24067504, TX
+  buffer 0x24067384 (0x180 = 384 bytes); `ser_hal_transport_tx_pkt_send` 0xd02c0f1e refuses over 0x180 bytes;
+  `ser_hal_transport_rx_pkt_free` 0xd02c0e8e.
+- **Sd transport.** `ser_sd_transport_open` 0xd02ac252 (data at 0x3003d548: busy flag; 0x3003d554 the first and 0x3003d558
+  the response wait handler); `ser_sd_transport_cmd_write` 0xd02ac2be (sets busy, sends, calls the wait handler);
+  response wait `Ble_SerWaitNordicRsp` 0xd02ba268: spins on busy; `HAL_GetTick() - start > 5000` ("Wait Nordic response over 5
+  seconds !!"); then `Ride_IsNotRecording` 0xd018be28 true: `Ble_CreateUpdateIniIfNordicBin` 0xd018dbb0 and
+  `finalize_reboot`; false: the busy flag cleared by 0xd02ac29a. Its inner call 0xd02c8aec is an empty stub (the SDK's
+  `sd_app_evt_wait`), so the wait is a busy loop in a uC/OS task.
+- **Event handlers** registered at `Ble_SdhEnableRequest` (the stack enable) 0xd029d994 -> `sd_softdevice_enable` 0xd02ba334 ->
+  `ser_sd_transport_open`: BLE events 0xd02ba1b4 (decode into a 0x108-byte buffer, `ser_sd_transport_rx_free`, queue push,
+  `ser_app_hal_nrf_evt_pending` 0xd023def8); ANT events `ser_softdevice_ble_evt_handler` 0xd02ba1fc (0x30-byte items; the
+  name is misleading, it is the type 8 handler); transport events 0xd02ba240 (a 4-byte item queue). Queue descriptors
+  (p_cb, p_buffer, size, item size, mode): BLE 0xd02ba3c4 { 0x3003e12c, 0x30000004, 0x78, 0x108, 1 }, ANT 0xd02ba3d8
+  { 0x3003e138, 0x3002c728, 0x78, 0x30, 1 }, transport 0xd02ba3ec { 0x3003e144, 0x2406a0fc, 0x78, 4, 1 }. Size 0x78
+  = 120 means 119 usable slots in the SDK's `NRF_QUEUE_DEF` (size + 1 convention, inferred); mode 1 is
+  `NRF_QUEUE_MODE_NO_OVERFLOW` (inferred from the SDK enum order). `sd_ant_event_get` 0xd02ba2e8 pops the ANT queue and
+  copies 0x29 bytes. `app_error_handler_bare` 0xd023de2c: sets 0x3003e69c, prints "Nordic App error %d", sets 0x3003e620
+  for error 4 (NO_MEM), returns.
+- **Application task** `App_TaskNordic` 0xd0252148: `Ble_StackInit` 0xd02514fc (enable request, `nrf_sdh_ble_default_cfg_set`
+  0xd029daec, `sd_ble_enable` fragment 0xd028b32c, `Ant_StackEnable` 0xd029dce0 -> `sd_ant_enable` 0xd02a6ba2), then
+  `sd_ble_enable` 0xd028b2e0 (this name is `sd_ble_version_get`: it fills the three version bytes), then the modules; main
+  loop pends `OSMboxPend(mbox 0x2400ebb8, next software timer)` only when the event counter 0x3003e57c is 0, processes one
+  event (`Ble_SdhStackObserversPoll` 0xd029da54), the ANT command flags (0x2400eb93.., one-shot per flag), the phone link
+  (`Ble_AppCmdProcess` 0xd01ebeb8, "Wow" if more than 10 ms). The restart `goto` (a second `Ble_StackInit`: PA6 reset and
+  all the configuration) is taken when the file transfer ran more than 2000 passes (0x2400ef7c) or the throughput test
+  more than 4000; flag 0x2400ef67 asks for the same.
+- **Default cfg set** 0xd029daec, calls in this order: 0x20 (tag 1: count 6, event length 5), 0x40 (1, 5, 1), 0x23 (tag 1,
+  MTU 0x99), 0x01 (11), 0xA1 (0x580), 0xA0 (0). The app RAM base is `Ble_SdhBleAppRamStartGet` 0xd029dad8.
+- **GATT module** (`nrf_ble_gatt`): init 0xd029e020, `Ble_GattAttMtuPeriphSet` 0xd029e04e (0x99), link init 0xd029dd60:
+  periph MTU 0x99, central MTU 0x17, current data length 0x1b, wanted 0x9d (157); `on_connected_evt` 0xd029ddc0 (MTU request
+  `sd_ble_gattc_exchange_mtu_request` 0xd02ba0f0 when the link's wanted MTU exceeds the current), `Ble_GattDataLengthUpdate`
+  0xd029dd78 (`sd_ble_gap_data_length_update` 0xd029ba2e), `on_data_length_update_request_evt` 0xd029dfb8,
+  `on_exchange_mtu_request_evt` 0xd029deae (reply `sd_ble_gatts_exchange_mtu_reply` 0xd028a168 with the wanted MTU, at least 0x17).
+- **Event handler** `Ble_EvtHandler` 0xd025146e: event 0x01 -> `sd_ble_user_mem_reply(conn, 0)`; 0x21 -> `sd_ble_gap_phy_update(conn,
+  auto)`; 0x3b -> `sd_ble_gap_disconnect(conn, 0x13)`; GATTS authorize requests -> `sd_ble_gatts_rw_authorize_reply`.
+- **Scan and connect.** `Ble_ScanStart` 0xd027e660 (scan_stop then scan_start with the parameters at 0xd027f01c: active 1, 0,
+  0x60, 0x60, 0); `Ble_ScanStartLowPower` 0xd027e608 (parameters 0xd027e640: 1, 0x60, 0x30); connection parameters 0xd027f014
+  (6, 12, 0, 400); `Ble_CentralOnGapEvt` 0xd027eabc calls `sd_ble_gap_connect` 0xd029b80c and `sd_ble_gap_conn_param_update`.
+- **GAP / adv init.** `Ble_GapParamsInit` 0xd0251290 (name "RiderS510", PPCP 6 / 12), `Ble_ConnParamsInit` 0xd025140e (first update
+  0x28000 and next 0xF0000 ticks, count 3), `Ble_AdvertisingInit` 0xd02512ec (intervals 0x28 and 0xC80, 0xB4), `BleAdvLib_Start`
+  0xd029bdc8 (modes 1 to 4 pick the parameters, `sd_ble_gap_adv_start` 0xd029b338 with the tag in the library's own struct).
+  The ATT MTU and data length constants are in Ble_GattLinkInit.
+- **ANT.** `Ant_SetNetworkKeys` 0xd027d6d4 (nets 0 and 1 from 0x24010410 / 0x24010418, not copied), `Ant_AssignAllChannels` 0xd027d2a0
+  (14, 13, 0..11; 6 and 9 on network 1, 14 with the extended flag), `Ant_ConfigureChannel` 0xd027d3c0, `Ant_OpenChannel`
+  0xd027d480 (calls configure then open, then queues a message for the sensor modules), `Ant_CloseChannel` 0xd027d4d4 (status first;
+  closes only a searching/tracking channel), `Ant_ReportChannelId` 0xd027d5a8, `Ant_OpenSensorChannel` 0xd025e7f0, `Ant_ProcessCmdQueue`
+  0xd025ef78, `Ant_ScanChannelScheduler` 0xd027e3b0 (6 s of every 10 s on channel 13, the rest on 14, only while
+  `Ant_PairingWindowStart` 0xd027e1f2 has set the window; started from `Sensor_HandleCommand` 0xd01ece7c), `Ant_TxChannel8WithRetry` 0xd027e3c6.
+  The ANT encoders: enable 0xd02bf1a8 (0xfa), assign 0xd02bf1f8 (0xc2), open 0xd02bf23c (0xc4), id set 0xd02bf280 (0xd3), period
+  0xd02bf2d8, frequency 0xd02bf312, ack tx 0xd02bf3c8 (0xc8), close 0xd02bf44c, network address 0xd02bf478 (0xcc), low-priority
+  time-out 0xd02bf4ec, search waveform 0xd02bf528 (0xd5), id get 0xd02bf562, search priority 0xd02bf60a (0xd7), lib config clear
+  0xd02bf63c (0xdd), get 0xd02bf668 (0xdf), channel status 0xd02bf6e8 (0xe7).
+- **BLE command wrappers and their only callers** (stock never calls the others): adv_start 0xd029b338 <- `BleAdvLib_Start`;
+  conn_param_update 0xd029b552 <- `ConnParams_SendUpdateRequest` 0xd029c582 and `Ble_CentralOnGapEvt`; disconnect 0xd029b5a4 <-
+  `Ble_EvtHandler`, `Ble_DisconnectSensor` 0xd027f3f4, `Ble_Disconnect` 0xd028abe8, `ConnParams_UpdateTimeoutHandler` 0xd029c59e;
+  sec params reply 0xd029b672 <- `Ble_SmdParamsReply` 0xd02c5064; authenticate 0xd029b768 <- `Ble_SmdLinkSecure*`; encrypt 0xd029b8c4 <-
+  `Ble_SmdLinkSecureCentralEncryption` 0xd02c5174; whitelist 0xd029b97a, identities 0xd029b9ce <- `pm_*` 0xd02ae59e / 0xd02ae5e8;
+  gatts: sys attr 0xd0289e64 / 0xd028a0b0 <- `Ble_GscmLocalDb*`; hvx 0xd0289eca <- 13 phone-protocol senders (`Ble_Ft*`, `Ble_Send*`,
+  `Ble_LdcSvcSendNotify`); service add 0xd0289f32 <- `Ble_FtServiceInit` 0xd020c7e8, `Ble_AncsSvcInit` 0xd029c010, `Ble_LdcSvcInit` 0xd029c3e0;
+  gattc read / write 0xd02ba048 / 0xd02ba0a0 <- the seven `*_TxBufferProcess` client queues; discovery 0xd02b9f50.. <- `Ble_Db*`;
+  ecb 0xd029e9f6 <- `im_ah` 0xd02c36c0 (private address resolution); power off 0xd029e9a8 <- `App_TaskNordic` only.
+- **Power-off wait** `Ble_PowerOffNordicAndWait` 0xd0252858: posts to the task, polls 30 times 20 ms for it to report off.
+- **STM32 stop mode and RTS**: `Pwr_ConfigGpioPin4SleepOrActive` (ITCM 0xa5f0) drives PD4 high before the stop, restores AF7 in
+  `resume_from_stop` (ITCM 0xa074); the stop condition (HARDWARE.md 13) includes the recording flag 0x2400cbb1 = 0.
