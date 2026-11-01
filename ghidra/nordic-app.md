@@ -338,3 +338,23 @@ the SDK serialization encoder.
 - **Power-off wait** `Ble_PowerOffNordicAndWait` 0xd0252858: posts to the task, polls 30 times 20 ms for it to report off.
 - **STM32 stop mode and RTS**: `Pwr_ConfigGpioPin4SleepOrActive` (ITCM 0xa5f0) drives PD4 high before the stop, restores AF7 in
   `resume_from_stop` (ITCM 0xa074); the stop condition (HARDWARE.md 13) includes the recording flag 0x2400cbb1 = 0.
+
+## Emulated: what the app does at start and per event (rustfw `tools/nrf_emu.py`, 2026-11-01)
+
+Run in Unicorn with SoftDevice stubs (rustfw docs/devloop.md). Observed, not reversed from code:
+- **SVCs the app makes itself:** at start only 0x10 (`sd_softdevice_enable`: r1 = fault handler 0x3F415, r2 = the ANT
+  key pointer, ignored by the harness), then 0x3E (`sd_app_evt_wait`) in the main loop. Per SWI2 pass: 0x61
+  (`sd_ble_evt_get`), 0xC1 (`sd_ant_event_get`, repeated until NOT_FOUND = 5), 0x48 (a SoC event get, inferred: one
+  pointer argument, answered NOT_FOUND). A host command adds its own SVC (0x65 version get answered with
+  `01 65 00000000 04 0000 0000`: image 4, the other fields from the stub's SD info and flash words, so zero).
+- **UARTE use:** the handler tests ENDRX 0x110, ENDTX **0x120** (TXDRDY is 0x11C), ERROR 0x124, RXTO 0x144; INTEN is
+  set to ENDTX + RXTO at init and ERROR + ENDRX are set and cleared around each receive; the header read is
+  MAXCNT 2, the payload read MAXCNT = length; the TX is the 2-byte header, then the payload in one DMA.
+- **ANT event code:** the encoder accepts EVENT_RX = 0x80; an arbitrary code such as 0x4F made it call the error
+  handler with code 0xBADDCAFE (the warning bug, section 3). An event frame is `08` + 43 bytes (44 B payload).
+- **Error handler** (0x3F414): fault id 0x4001, info {line 0, file 0, code}; seen codes: 0xBADDCAFE (bad ANT event),
+  0x10 NO_MEM (the scheduler queue corrupted when the harness ignored PRIMASK: the app's critical regions use it).
+  After it the core idles in a loop around 0x3F433 with the app interrupts masked (NVIC ISER bit 2 clear).
+- **Timing (CPI 1, stubs free):** end of an event frame to the app starting the next header DMA: about 990
+  instructions (15 us at 64 MHz); to the first byte on the wire 1630 (25 us). Unknown opcode 0x01: hangs within
+  25 us of the command, no answer.
