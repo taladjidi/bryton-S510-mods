@@ -235,3 +235,21 @@ developer.nordicsemi.com, `examples/connectivity/experimental_ant_ble`, `compone
 
 Holding RTS for 100 ms by itself is safe: the chip waits without a time-out and carries on. It becomes fatal only
 through 1, when the hold lasts long enough (in total, against the event rate) to fill the queue.
+
+## Command table check for the rustfw test bench (2026-11-01, step 1)
+
+What was checked in the binary while building rustfw's `src/sim/chip_table.rs` (the public side states only the facts):
+
+- **Opcode table 0x3FE6C, re-read:** 121 entries of {opcode u32, handler}, 120 distinct opcodes (0x86 twice). The set is
+  exactly: 32 43 49 | 60 62..69 | 6C..90 | 94..9E | A0..AD | B0..B4 | C0 C2..C8 CC..DB DD..E1 E7 E9..EC F2..F5 F8..FA
+  (0x61 is absent: not an opcode of the chip). Every opcode rustfw sends is in it.
+- **GATT client write, handler 0x3E534 (SVC 0x9C), request decoder 0x3BAD8:** the handler has the 4-argument shape of the
+  SDK's `conn_mw_ble_gattc_write`; its value buffer is a 20-byte stack array, and the length initialised for the decoder is
+  0x14 (the `len` half of 0x140000): `buf_dec` refuses a longer value (`SER_ASSERT_LENGTH_LEQ`), the handler fails and the
+  chip hangs. So `BLE_GATTC_WRITE_P_VALUE_LEN_MAX` is the SDK default (ATT MTU 23 minus 3) even though the event buffer is
+  262 bytes. Consequence found in rustfw: Get App Attributes for "com.apple.MobileSMS" (22 bytes) would have hung the chip
+  (fixed: `ble::write` refuses over 20).
+- **Not checked in the binary** (taken from the SDK decoders, `components/serialization/connectivity/codecs/{ble,ant}/serializers`
+  and `common/struct_ser`): every other layout. The GAP name buffer (31), advertising data (31), GATTS values (512) and ANT
+  acknowledged message size (9) bounds are the SDK's / SoftDevice headers' defaults, inferred to hold in this build.
+- `sd_ble_enable` has no arguments (SDK API >= 4); rustfw sends exactly `00 60`, as does stock.
