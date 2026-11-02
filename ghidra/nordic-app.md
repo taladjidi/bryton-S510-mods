@@ -365,3 +365,34 @@ Run in Unicorn with SoftDevice stubs (rustfw docs/devloop.md). Observed, not rev
 - **"ANT events beyond 0x80 hang" was not a harness bug:** the encoder (SDK `ant_event.c` switch) accepts the event codes of ant_parameters.h only; 0x01, 0x05, 0x06, 0x07 and 0x80 all come out as 44-byte type 08 frames; a message id used as an event code (0x4F, 0x2F) returns NOT_SUPPORTED and the app hangs.
 - **Hang signature without private addresses:** the UART interrupt stays masked (critical region) and the core spins; 97 events in one SoftDevice pass hang it, 96 do not.
 - **Frame gap, deterministic:** ENDTX to the next STARTTX 966 instructions (15 us at CPI 1, 64 MHz), 1168 to the first wire byte.
+
+## Switch-off and the radio's power (stock R039, Ghidra headless on a scratch copy, 2026-11-02)
+
+- **Stock's switch-off** `Pwr_ShutdownToStandby` 0xd018cd88 (only caller `Pwr_HandleKeyPowerEvent` 0xd0194856):
+  `Ble_StoreBtDataBin`, sensor ini rewrite, `Ble_PowerOffNordicAndWait` 0xd0252858, `Pwr_ChargeOnlyLoop` (USB in), GNSS off,
+  beep, backlight off, white screen, accelerometer / light sensor / barometer off, wait for key 1 release, 50 ms,
+  `Pwr_StopModePeriphTransition(0)` ITCM 0xa098 (RTC wake-up timer off, IRQ 149 cleared, de-init PA1 PB2 PE3 PB4, EXTI
+  55 / 58 events, IRQ 149, WKUP1 / WKUP4 rising no pull), clean D-cache, `HAL_PWREx_EnterSTANDBYMode` D2 then D1.
+  **No GPIO is written for the Nordic chip** (PA6, PI4 and the USART2 pins stay as they are; PD4 is parked high only in
+  the idle stop path, `Pwr_StopModePeriphTransition(1)` -> `Pwr_ConfigGpioPin4SleepOrActive(0)` ITCM 0xa5f0, and back to AF7
+  in mode 2 from `resume_from_stop` ITCM 0xa074).
+- **`Ble_PowerOffNordicAndWait`:** sets 0x2401058f = 1, stops the three ANT channel timers, posts 1 to the Nordic task's
+  mailbox (0x2400ebb8), polls `Ble_IsSystemOffSent` 30 x 20 ms ("Wait Nordic Off", "Check Nordic Off Fail" after 600 ms,
+  then carries on). `App_TaskNordic` 0xd0252148 sees the flag, calls `sd_power_system_off` 0xd029e9a8 (encoder, then
+  `Ble_SetSystemOffSent` **before** `ser_sd_transport_cmd_write(...,1,0)`: the flag says encoded, not on the wire), prints
+  " Nordic chip off ", and suspends itself while the flag is 1. Nothing checks the chip actually went off.
+- **Every HAL GPIO call in the image** (callers of HAL_GPIO_Init / DeInit / WritePin and their veneers, 31 functions):
+  no pin outside BOARD.md 4's list is written at switch-off or in the Nordic paths. `MX_GPIO_Init` 0xd0189926 initial
+  levels: PI3 PI4 PI6 low, PH2 PH3 low, PF8 high, PC4 low, **PA2 high**, PA7 low, **PB15 high**. PA2: output push-pull,
+  no pull, set again in `Batt_AdcInit` 0xd01fac58 (with PF6 input pull-up), driven low only in
+  `Usb_CheckBootIntoMassStorage` 0xd018bfbc before `Usb_DeviceStart`; `batt_sample` and `Batt_ChargeTempCheck` do not
+  touch it. Purpose unknown (a rail cut in mass-storage mode, inferred at most). PB15: SDRAM power (IAP 0x0800862a).
+- **On the unit (rustfw running, cable in, 2026-11-02, `tools/dev.py peek`, read-only):** outputs PA2=1 PA6=1 PA7=1 PA10=0,
+  PB15=1, PE4=1, PF8=1, PG3=1 PG9=1 PG10=1 PG13=0 PG14=0, PH2=0 PH3=1, PI3=1 PI4=1 PI6=0. Only PA2 and PB15 are not in
+  rustfw's BOARD.md 4.
+- **The part:** nRF52832 (inferred: S332 v5 at 0x2D000, initial SP 0x2000F220 under 64 KB of RAM). System OFF 0.3 uA,
+  reset-held about 0.2 mA plus regulators (nRF52832 PS v1.4; DevZone 47176). After `00 32` the app closes the transport
+  (SDK `nrf_drv_uart_uninit` -> `pins_to_default`: the four UART pins input, disconnected, no pull) then SVC 0x32.
+- **Seen on the unit (rustfw `dev.py nrfoff`, RAM run, 2026-11-02):** after `00 32` the chip's RTS (STM32 PD3, pulled up)
+  is released within 1 ms and stays released at 10 ms, 100 ms and 1 s (5 runs); low again after the reset pulse. So the
+  app does close the transport before SVC 0x32, and System OFF is observable from the STM32 side.
