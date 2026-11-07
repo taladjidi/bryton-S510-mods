@@ -17,6 +17,10 @@ with the same base to follow along (see [../ghidra/README.md](../ghidra/README.m
   - The power button drives two pins: PA0 goes high (the standby wake-up pin WKUP1) and PA1 goes low (the key).
     PA0 must be a GPIO input before standby, as stock sets it: left in its reset analog mode, the press does not
     wake the unit, and only the four-button restart brings it back.
+  - Switching off is whole-system Standby: stock sets PDDS_D1, PDDS_D2 and PDDS_D3 in PWR_CPUCR (its
+    HAL_PWREx_EnterSTANDBYMode(2) sets bit 2, D3, then D2, then D1 and the WFI). With D3 left out the system only
+    stops: the from-scratch firmware did that and lost about 8 mA while off (58 % of the cell in 88 h,
+    2026-11-07); with all three, PWR_CPUCR.SBF reads set at the next boot.
   - The panel's SPI1 (software chip select): CR1.SSI must be set before CFG2.MASTER, otherwise a mode fault
     clears MASTER and the SPI never clocks.
   - The Nordic BLE / ANT chip: USART2 at 1 Mbaud with RTS / CTS, framed as a 2-byte little-endian length then
